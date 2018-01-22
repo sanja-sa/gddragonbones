@@ -2,7 +2,7 @@
 Plugin module for Godot 2.1.4 Game Engine to use DragonBones
 
 ## Links
-[![Godot Engine logo]](https://godotengine.org/logo.png)
+[![GODOT](/logo.png)](https://godotengine.org)
 Homepage Godot: https://godotengine.org
 
 [![DragonBones logo]](http://www.dragonbones.com/en/img/logo512.png)
