@@ -1,0 +1,26 @@
+﻿Import('env')
+Import('env_modules')
+
+env_modules.add_source_files(env.modules_sources,"*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/animation/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/armature/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/core/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/event/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/factory/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/geom/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/model/*.cpp")
+env_modules.add_source_files(env.modules_sources,"src/dragonBones/parser/*.cpp")
+
+env_modules.Append(CPPFLAGS=["-I", "modules/gddragonbones/src",
+	"-I",  "modules/gddragonbones/src/dragonBones",
+])
+
+if (env['platform'] == 'android'):
+	env_modules.Append(CXXFLAGS=['-std=c++11'])
+
+Export('env_modules')
+Export('env')
+
+
