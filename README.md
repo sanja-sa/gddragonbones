@@ -29,6 +29,4 @@ android_stl=yes
 ##
 [![Sample](./sample.gif)]()
 
-#### License
-MIT license
 
