@@ -2,10 +2,7 @@
 Plugin module for Godot 2.1.4 Game Engine to use DragonBones
 
 ## Links
-[![GODOT](/logo.png)](https://godotengine.org)
 Homepage Godot: https://godotengine.org
-
-[![DragonBones logo]](http://www.dragonbones.com/en/img/logo512.png)
 Homepage DragonBones: http://dragonbones.com
 
 #### Support Versions
@@ -17,12 +14,17 @@ DragonBones Pro 5.6
 for compilation instructions for every supported platform.
 
 DragonBones used STL. 
-Compiling Godot Engine with flag for Android: android_stl=yes
+Compiling Godot Engine with flag for Android: 
+
+```python
+android_stl=yes
+```
+
 For iOS not Tested at this moment, maybe some compilation trouble.
 
 [Godot Engine Src](https://github.com/godotengine/godot)
 [DragonBones common library](https://github.com/DragonBones/DragonBonesCPP)
 
-####
-[![Sample]()](sample.gif)
+##
+[![Sample](./sample.gif)]()
 
