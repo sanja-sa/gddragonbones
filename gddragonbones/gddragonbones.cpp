@@ -236,6 +236,26 @@ void GDDragonBones::fade_in(const String& _name_anim, float _time, int _loop, in
     }
 }
 
+void GDDragonBones::fade_out(const String& _name_anim)
+{
+    if(!b_inited) return;
+
+    if(!p_armature->getAnimation()->isPlaying() 
+	|| !p_armature->getAnimation()->hasAnimation(_name_anim.ascii().get_data()))
+	return;
+
+    p_armature->getAnimation()->stop(_name_anim.ascii().get_data());
+
+    if(p_armature->getAnimation()->isPlaying())
+	return;
+
+    _set_process(false);
+    b_playing = false;
+
+    _reset();
+    _change_notify();
+}
+
 void GDDragonBones::set_modulate(const Color& p_color)
 {
     modulate = p_color;
@@ -374,7 +394,8 @@ void   GDDragonBones::play(bool _b_play)
     {
         p_armature->getAnimation()->play(str_curr_anim.ascii().get_data(), c_loop);
         _set_process(true);
-    } else
+    } 
+    else // not finded animation stop playing
     {
         str_curr_anim  = "[none]";
         stop();
@@ -550,6 +571,7 @@ void GDDragonBones::_bind_methods()
     ObjectTypeDB::bind_method(_MD("get_opacity"), &GDDragonBones::get_opacity);
 
     ObjectTypeDB::bind_method(_MD("fade_in", "anim_name", "time", "loop", "layer", "group", "fade_out_mode"), &GDDragonBones::fade_in);
+    ObjectTypeDB::bind_method(_MD("fade_out", "anim_name"), &GDDragonBones::fade_out);
 
     ObjectTypeDB::bind_method(_MD("stop"), &GDDragonBones::stop);
     ObjectTypeDB::bind_method(_MD("reset"), &GDDragonBones::_reset);

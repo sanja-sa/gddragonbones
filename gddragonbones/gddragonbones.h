@@ -89,6 +89,7 @@ public:
     float get_opacity() const;
 
     void fade_in(const String& _name_anim, float _time, int _loop, int _layer, const String& _group, GDDragonBones::AnimFadeOutMode _fade_out_mode);
+    void fade_out(const String& _name_anim);
 
     void set_modulate(const Color& p_color);
 	Color get_modulate() const;	

@@ -35,7 +35,7 @@ android_stl=yes
 ```python
 var skeleton = get_node("skeleton")
 
-#if needed set speed animation
+# if needed set speed animation
 skeleton.set_speed(0.5)
 
 # start play
@@ -49,7 +49,7 @@ skeleton.stop()
 ```python
 var skeleton = get_node("skeleton")
 
-#if needed set speed animation
+# if needed set speed animation
 skeleton.set_speed(0.5)
 
 # play animation by layers, see DragonBones documentation for parametrs
@@ -60,16 +60,31 @@ skeleton.fade_in("idle", -1, -1, 2, "", GDDragonBones.FadeOut_All)
 # "2" -- layer for this animation
 # "" -- group name
 # GDDragonBones.FadeOut_All -- flag for FadeOut animation
-#	GDDragonBones.FadeOut_None -- Do not fade out of any animation states.
-#	GDDragonBones.FadeOut_SameLayer -- Fade out the animation states of the same layer.
-#	GDDragonBones.FadeOut_SameGroup -- Fade out the animation states of the same group.
+#	GDDragonBones.FadeOut_None 		-- Do not fade out of any animation states.
+#	GDDragonBones.FadeOut_SameLayer 	-- Fade out the animation states of the same layer.
+#	GDDragonBones.FadeOut_SameGroup 	-- Fade out the animation states of the same group.
 #	GDDragonBones.FadeOut_SameLayerAndGroup -- Fade out the animation states of the same layer and group.
-#	GDDragonBones.FadeOut_All -- Fade out of all animation states.	
-#	GDDragonBones.FadeOut_Single  -- Does not replace the animation state with the same name.
+#	GDDragonBones.FadeOut_All 		-- Fade out of all animation states.	
+#	GDDragonBones.FadeOut_Single  		-- Does not replace the animation state with the same name.
 #
 # skeleton.fade_in("walk", 0.3, 0, 0, "normalGroup", GDDragonBones.FadeOut_All)
 
+# run animation in "1" layer
 skeleton.fade_in("eyes_idle", -1, -1, 1, "", GDDragonBones.FadeOut_SameLayer)
+
+# stop specified animation by name
+skeleton.fade_out("eyes_idle")
 
 ```
 
+#### Set pose from animation
+```python
+var skeleton = get_node("skeleton")
+
+# choose animation
+skeleton.set("playback/curr_animation", "idle")
+
+# seek animation [0.0-1.0]
+skeleton.seek(0.5)
+
+```
