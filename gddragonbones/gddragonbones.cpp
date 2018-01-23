@@ -5,7 +5,7 @@
 #include "core/os/file_access.h"
 #include "core/os/os.h"
 
-#include "method_bind_ext.inc"
+#include "method_bind_ext.gen.inc"
 
 //////////////////////////////////////////////////////////////////
 //// Resource
