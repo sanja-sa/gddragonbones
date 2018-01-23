@@ -67,7 +67,7 @@ skeleton.fade_in("idle", -1, -1, 2, "", GDDragonBones.FadeOut_All)
 #	GDDragonBones.FadeOut_All -- Fade out of all animation states.	
 #	GDDragonBones.FadeOut_Single  -- Does not replace the animation state with the same name.
 #
-# skeleton.fade_in("walk", 0.3, 0, 0, "normalGroup", )
+# skeleton.fade_in("walk", 0.3, 0, 0, "normalGroup", GDDragonBones.FadeOut_All)
 
 skeleton.fade_in("eyes_idle", -1, -1, 1, "", GDDragonBones.FadeOut_SameLayer)
 
