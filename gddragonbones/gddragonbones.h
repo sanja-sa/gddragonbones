@@ -58,6 +58,7 @@ private:
     bool                        b_playing;
     bool                        b_debug;
     bool                        b_inited;
+    bool                        b_try_playing;
 
 protected:
     void _notification(int p_what);

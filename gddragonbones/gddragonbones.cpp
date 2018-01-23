@@ -88,6 +88,7 @@ GDDragonBones::GDDragonBones()
     b_debug = false;
     c_loop = -1;
     b_inited = false;
+    b_try_playing = false;
 }
 
 GDDragonBones::~GDDragonBones()
@@ -162,7 +163,6 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
     if (m_res == _p_data)
 		return;
 
-    bool __b_pl = b_playing;
     stop();
 
     _cleanup();
@@ -388,15 +388,18 @@ void   GDDragonBones::play(bool _b_play)
         stop();
         return;
     }
+
     // setup speed
     p_factory->set_speed(f_speed);
     if(has_anim(str_curr_anim))
     {
         p_armature->getAnimation()->play(str_curr_anim.ascii().get_data(), c_loop);
         _set_process(true);
+        b_try_playing = false;
     } 
     else // not finded animation stop playing
     {
+        b_try_playing = true;
         str_curr_anim  = "[none]";
         stop();
     }
@@ -513,7 +516,7 @@ bool GDDragonBones::_set(const StringName& _str_name, const Variant& _c_r_value)
                 stop();
             else if (has_anim(str_curr_anim))
             {
-                if(b_playing)
+                if(b_playing || b_try_playing)
                     play();
                 else
                     p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data());
