@@ -44,16 +44,6 @@ public:
     GDDisplay()  { modulate = Color(1,1,1,1); p_owner = nullptr; b_debug = false; }
     virtual ~GDDisplay() {}
 
-	inline void set_add_blend_mode()
-	{
-		VisualServer::get_singleton()->canvas_item_add_set_blend_mode(get_canvas_item(), VS::MaterialBlendMode(VS::MATERIAL_BLEND_MODE_ADD));
-	}
-
-	inline void set_normal_blend_mode()
-	{
-		VisualServer::get_singleton()->canvas_item_add_set_blend_mode(get_canvas_item(), VS::MaterialBlendMode(VS::MATERIAL_BLEND_MODE_MIX));
-	}
-
     virtual void set_modulate(const Color& _col)
 	{
 		modulate = _col;

@@ -51,7 +51,6 @@ private:
     GDArmatureDisplay*          p_armature;
     AnimMode                    m_anim_mode;
     float                       f_speed;
-    float                       f_bone_opacity;
     int                         c_loop;
     bool                        b_processing;
     bool                        b_active;
@@ -61,12 +60,12 @@ private:
     bool                        b_try_playing;
 
 protected:
-    void _notification(int p_what);
+    void _notification(int _what);
 	static void _bind_methods();
 
     bool _set(const StringName& _str_name, const Variant& _c_r_value);
     bool _get(const StringName& _str_name, Variant &_r_ret) const;
-    void _get_property_list(List<PropertyInfo> *p_list) const;
+    void _get_property_list(List<PropertyInfo> *_p_list) const;
 
 public:
 	GDDragonBones();
@@ -77,7 +76,6 @@ public:
     // to initial pose current animation
     void    _reset();
     void    _set_process(bool _b_process, bool _b_force = false);
-
 
     void dispatch_event(const String& _str_type, const EventObject* _p_value);
     void dispatch_snd_event(const String& _str_type, const EventObject* _p_value);
@@ -92,8 +90,11 @@ public:
     void fade_in(const String& _name_anim, float _time, int _loop, int _layer, const String& _group, GDDragonBones::AnimFadeOutMode _fade_out_mode);
     void fade_out(const String& _name_anim);
 
-    void set_modulate(const Color& p_color);
+    void set_modulate(const Color& _p_color);
 	Color get_modulate() const;	
+
+    void set_blend_mode(CanvasItem::BlendMode _blend_mode);
+    CanvasItem::BlendMode get_blend_mode() const;
 
     void set_active(bool _b_active);
     bool is_active() const;
@@ -104,7 +105,7 @@ public:
     void set_speed(float _f_speed);
     float get_speed() const;
 
-    void set_texture(const Ref<Texture> &p_texture);
+    void set_texture(const Ref<Texture> &_p_texture);
     Ref<Texture> get_texture() const;
 
     String get_current_animation() const;
@@ -116,11 +117,14 @@ public:
     AnimMode get_animation_process_mode() const;
 
     void    play(bool _b_play = true);
+    void    play_from_time(float _f_time);
+    void    play_from_progress(float _f_progress);
+
     bool    is_playing() const;
 
     bool    has_anim(const String& _str_anim);
-    void    stop_all();
-    void    stop();
+    void    stop(bool _b_all = false);
+    inline void    stop_all() { stop(true); }
 };
 
 VARIANT_ENUM_CAST(GDDragonBones::AnimMode);

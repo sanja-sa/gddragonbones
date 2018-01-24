@@ -24,19 +24,36 @@ void GDSlot::_updateBlendMode()
 {
 	if (_renderDisplay)
 	{
-		switch (_blendMode)
-		{
-			case BlendMode::Normal:
-				_renderDisplay->set_normal_blend_mode();
-				break;
+        CanvasItem::BlendMode __blend = CanvasItem::BLEND_MODE_MIX;
+        GDOwnerNode* __p_owner = _renderDisplay->p_owner;
+        if(__p_owner)
+            __blend = __p_owner->get_blend_mode();
+        if(!__blend)
+        {
+            switch (_blendMode)
+            {
+                case BlendMode::Normal:
+                    __blend = CanvasItem::BLEND_MODE_MIX;
+                    break;
 
-			case BlendMode::Add:
-				_renderDisplay->set_add_blend_mode();
-				break;
+                case BlendMode::Add:
+                    __blend = CanvasItem::BLEND_MODE_ADD;
+                    break;
 
-			default:
-				break;
-		}
+                case BlendMode::Multiply:
+                    __blend = CanvasItem::BLEND_MODE_MUL;
+                    break;
+
+                case BlendMode::Subtract:
+                    __blend = CanvasItem::BLEND_MODE_SUB;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        _renderDisplay->set_blend_mode(__blend);
+        _renderDisplay->update();
 	}
 	else if (_childArmature)
 	{

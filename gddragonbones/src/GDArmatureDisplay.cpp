@@ -65,11 +65,25 @@ void GDArmatureDisplay::update_child_colors()
 {
     if(!p_armature)
         return;
+
     auto arr = p_armature->getSlots();
     for (auto item : arr)
     {
         if (!item) continue;
         item->_colorDirty = true;
+        item->update(0);
+    }
+}
+
+void GDArmatureDisplay::update_child_blends()
+{
+    if(!p_armature)
+        return;
+    auto arr = p_armature->getSlots();
+    for (auto item : arr)
+    {
+        if (!item) continue;
+        item->invalidUpdate();
         item->update(0);
     }
 }

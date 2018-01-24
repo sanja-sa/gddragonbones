@@ -44,6 +44,7 @@ public:
 
     void    add_parent_class(bool _b_debug, const Ref<Texture>& _m_texture_atla);
     void    update_child_colors();
+    void    update_child_blends();
     void    update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
     void    set_debug(bool _b_debug);
 

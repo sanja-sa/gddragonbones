@@ -81,7 +81,6 @@ GDDragonBones::GDDragonBones()
     p_armature = nullptr;
     m_anim_mode = ANIMATION_PROCESS_IDLE;
     f_speed = 1.f;
-    f_bone_opacity = 1.f;
     b_processing = false;
     b_active = true;
     b_playing = false;
@@ -131,7 +130,7 @@ void GDDragonBones::dispatch_snd_event(const String& _str_type, const EventObjec
 void GDDragonBones::dispatch_event(const String& _str_type, const EventObject* _p_value)
 {
     if(get_tree()->is_editor_hint())
-	return;
+        return;
 
     if(_str_type == EventObject::START)
         emit_signal("dragon_anim_start", String(_p_value->animationState->name.c_str()));
@@ -199,6 +198,10 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
 
     b_inited = true;
 
+    // update color and opacity
+    p_armature->update_child_colors();
+    p_armature->update_child_blends();
+
     _change_notify();
     update();
 }
@@ -210,15 +213,18 @@ Ref<GDDragonBones::GDDragonBonesResource> GDDragonBones::get_resource()
 
 void GDDragonBones::set_opacity(float _f_opacity)
 {
-    f_bone_opacity = _f_opacity;
-    GDOwnerNode::set_opacity(f_bone_opacity);
+    GDOwnerNode::set_opacity(_f_opacity);
     if(p_armature)
         p_armature->update_child_colors();
 }
 
 float GDDragonBones::get_opacity() const
 {
-    return f_bone_opacity;
+#ifdef TOOLS_ENABLED
+    if(p_armature)
+         p_armature->update_child_colors();
+#endif
+    return GDOwnerNode::get_opacity();
 }
 
 void GDDragonBones::fade_in(const String& _name_anim, float _time, int _loop, int _layer, const String& _group, GDDragonBones::AnimFadeOutMode _fade_out_mode)
@@ -228,11 +234,11 @@ void GDDragonBones::fade_in(const String& _name_anim, float _time, int _loop, in
     if(has_anim(_name_anim))
     {
         p_armature->getAnimation()->fadeIn(_name_anim.ascii().get_data(), _time, _loop, _layer, _group.ascii().get_data(), (AnimationFadeOutMode)_fade_out_mode);
-	if(!b_playing)
-	{
-		b_playing = true;
-        	_set_process(true);
-	}
+        if(!b_playing)
+        {
+            b_playing = true;
+                _set_process(true);
+        }
     }
 }
 
@@ -247,7 +253,7 @@ void GDDragonBones::fade_out(const String& _name_anim)
     p_armature->getAnimation()->stop(_name_anim.ascii().get_data());
 
     if(p_armature->getAnimation()->isPlaying())
-	return;
+        return;
 
     _set_process(false);
     b_playing = false;
@@ -256,18 +262,33 @@ void GDDragonBones::fade_out(const String& _name_anim)
     _change_notify();
 }
 
-void GDDragonBones::set_modulate(const Color& p_color)
+void GDDragonBones::set_modulate(const Color& _p_color)
 {
-    modulate = p_color;
+    modulate = _p_color;
     if(p_armature)
         p_armature->update_child_colors();
-    _change_notify();
-    update();
 }
 
 Color GDDragonBones::get_modulate() const
 {
     return modulate;
+}
+
+
+void GDDragonBones::set_blend_mode(CanvasItem::BlendMode _blend_mode)
+{
+    GDOwnerNode::set_blend_mode(_blend_mode);
+    if(p_armature)
+        p_armature->update_child_blends();
+}
+
+CanvasItem::BlendMode GDDragonBones::get_blend_mode() const
+{
+#ifdef TOOLS_ENABLED
+    if(p_armature)
+        p_armature->update_child_blends();
+#endif
+    return GDOwnerNode::get_blend_mode();
 }
 
 void GDDragonBones::set_active(bool _b_active)
@@ -311,11 +332,11 @@ void GDDragonBones::set_animation_process_mode(GDDragonBones::AnimMode _mode)
 {
     if (m_anim_mode == _mode)
         return;
-    bool pr = b_processing;
-    if (pr)
+    bool __pr = b_processing;
+    if (__pr)
         _set_process(false);
     m_anim_mode = _mode;
-    if (pr)
+    if (__pr)
         _set_process(true);
 }
 
@@ -324,9 +345,9 @@ GDDragonBones::AnimMode GDDragonBones::get_animation_process_mode() const
     return m_anim_mode;
 }
 
-void GDDragonBones::_notification(int p_what)
+void GDDragonBones::_notification(int _what)
 {
-    switch (p_what)
+    switch (_what)
     {
         case NOTIFICATION_ENTER_TREE:
         {
@@ -369,7 +390,7 @@ void GDDragonBones::_notification(int p_what)
 
         case NOTIFICATION_EXIT_TREE:
         {
-            //stop_all();
+
         }
         break;
     }
@@ -397,6 +418,7 @@ void   GDDragonBones::play(bool _b_play)
         _set_process(true);
         b_try_playing = false;
     } 
+
     else // not finded animation stop playing
     {
         b_try_playing = true;
@@ -405,17 +427,26 @@ void   GDDragonBones::play(bool _b_play)
     }
 }
 
+void  GDDragonBones::play_from_time(float _f_time)
+{
+    play();
+    if(b_playing)
+         p_armature->getAnimation()->gotoAndPlayByTime(str_curr_anim.ascii().get_data(), _f_time, c_loop);
+}
+
+void   GDDragonBones::play_from_progress(float _f_progress)
+{
+    play();
+    if(b_playing)
+         p_armature->getAnimation()->gotoAndPlayByProgress(str_curr_anim.ascii().get_data(), CLAMP(_f_progress, 0, 1.f), c_loop);
+}
+
 bool GDDragonBones::has_anim(const String& _str_anim)
 {
     return p_armature->getAnimation()->hasAnimation(_str_anim.ascii().get_data());
 }
 
-void GDDragonBones::stop_all()
-{
-    stop();
-}
-
-void GDDragonBones::stop()
+void GDDragonBones::stop(bool _b_all)
 {
     if(!b_inited) return;
 
@@ -423,7 +454,7 @@ void GDDragonBones::stop()
     b_playing = false;
 
     if(p_armature->getAnimation()->isPlaying())
-        p_armature->getAnimation()->stop(str_curr_anim.ascii().get_data());
+        p_armature->getAnimation()->stop(_b_all?"":str_curr_anim.ascii().get_data());
 
     _reset();
     _change_notify();
@@ -445,7 +476,7 @@ void GDDragonBones::seek(float _f_p)
     if(b_inited && str_curr_anim != "[none]" && p_armature->getAnimation())
     {
         stop();
-        p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data(), _f_p);
+        p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data(), CLAMP(_f_p, 0, 1.f));
     }
 }
 
@@ -474,12 +505,12 @@ void GDDragonBones::_set_process(bool _b_process, bool _b_force)
     b_processing = _b_process;
 }
 
-void GDDragonBones::set_texture(const Ref<Texture> &p_texture) {
+void GDDragonBones::set_texture(const Ref<Texture>& _p_texture) {
 
-    if (p_texture == m_texture_atlas)
+    if (_p_texture == m_texture_atlas)
         return;
 
-    m_texture_atlas = p_texture;
+    m_texture_atlas = _p_texture;
 
 #ifdef DEBUG_ENABLED
     if (m_texture_atlas.is_valid()) {
@@ -495,7 +526,8 @@ void GDDragonBones::set_texture(const Ref<Texture> &p_texture) {
     }
 }
 
-Ref<Texture> GDDragonBones::get_texture() const {
+Ref<Texture> GDDragonBones::get_texture() const
+{
 
     return m_texture_atlas;
 }
@@ -541,6 +573,7 @@ bool GDDragonBones::_set(const StringName& _str_name, const Variant& _c_r_value)
            seek(_c_r_value);
        }
     }
+
     return true;
 }
 
@@ -573,12 +606,19 @@ void GDDragonBones::_bind_methods()
     ObjectTypeDB::bind_method(_MD("set_opacity", "opacity"), &GDDragonBones::set_opacity);
     ObjectTypeDB::bind_method(_MD("get_opacity"), &GDDragonBones::get_opacity);
 
+    ObjectTypeDB::bind_method(_MD("set_blend_mode", "blend_mode"), &GDDragonBones::set_blend_mode);
+    ObjectTypeDB::bind_method(_MD("get_blend_mode"), &GDDragonBones::get_blend_mode);
+
     ObjectTypeDB::bind_method(_MD("fade_in", "anim_name", "time", "loop", "layer", "group", "fade_out_mode"), &GDDragonBones::fade_in);
     ObjectTypeDB::bind_method(_MD("fade_out", "anim_name"), &GDDragonBones::fade_out);
 
     ObjectTypeDB::bind_method(_MD("stop"), &GDDragonBones::stop);
+    ObjectTypeDB::bind_method(_MD("stop_all"), &GDDragonBones::stop_all);
     ObjectTypeDB::bind_method(_MD("reset"), &GDDragonBones::_reset);
     ObjectTypeDB::bind_method(_MD("play"), &GDDragonBones::play);
+    ObjectTypeDB::bind_method(_MD("play_from_time"), &GDDragonBones::play_from_time);
+    ObjectTypeDB::bind_method(_MD("play_from_progress"), &GDDragonBones::play_from_progress);
+
     ObjectTypeDB::bind_method(_MD("has", "name"), &GDDragonBones::has_anim);
     ObjectTypeDB::bind_method(_MD("is_playing"), &GDDragonBones::is_playing);
 
@@ -600,12 +640,8 @@ void GDDragonBones::_bind_methods()
     ObjectTypeDB::bind_method(_MD("get_animation_process_mode"),&GDDragonBones::get_animation_process_mode);
 
     ADD_PROPERTYNZ(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), _SCS("set_texture"), _SCS("get_texture"));
-
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), _SCS("set_debug"), _SCS("is_debug"));
-
     ADD_PROPERTY(PropertyInfo(Variant::COLOR, "modulate"), _SCS("set_modulate"), _SCS("get_modulate"));
-    ADD_PROPERTYNO(PropertyInfo(Variant::REAL, "visibility/BonesOpacity", PROPERTY_HINT_RANGE, "0,1,0.01"), _SCS("set_opacity"), _SCS("get_opacity"));
-
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, "GDDragonBonesResource"), _SCS("set_resource"), _SCS("get_resource"));
 
     ADD_PROPERTY(PropertyInfo(Variant::INT, "playback/process_mode", PROPERTY_HINT_ENUM, "Fixed,Idle"), _SCS("set_animation_process_mode"), _SCS("get_animation_process_mode"));
@@ -634,9 +670,9 @@ void GDDragonBones::_bind_methods()
     BIND_CONSTANT(FadeOut_Single);
 }
 
-void GDDragonBones::_get_property_list(List<PropertyInfo> *p_list) const
+void GDDragonBones::_get_property_list(List<PropertyInfo>* _p_list) const
 {
-    List<String> names;
+    List<String> __l_names;
 
     if (b_inited && p_armature->getAnimation())
     {
@@ -644,24 +680,21 @@ void GDDragonBones::_get_property_list(List<PropertyInfo> *p_list) const
         auto __it = __names.cbegin();
         while(__it != __names.cend())
         {
-            names.push_back(__it->c_str());
+            __l_names.push_back(__it->c_str());
             ++__it;
         }
     }
 
+    __l_names.sort();
+    __l_names.push_front("[none]");
+    String __str_hint;
+    for (List<String>::Element* __p_E = __l_names.front(); __p_E; __p_E = __p_E->next())
     {
-        names.sort();
-        names.push_front("[none]");
-        String hint;
-        for (List<String>::Element *E = names.front(); E; E = E->next()) {
-
-            if (E != names.front())
-                hint += ",";
-            hint += E->get();
-        }
-
-        p_list->push_back(PropertyInfo(Variant::STRING, "playback/curr_animation", PROPERTY_HINT_ENUM, hint));
-
-        p_list->push_back(PropertyInfo(Variant::INT, "playback/loop", PROPERTY_HINT_RANGE, "-1,100,1"));
+       if (__p_E != __l_names.front())
+           __str_hint += ",";
+           __str_hint += __p_E->get();
     }
+
+    _p_list->push_back(PropertyInfo(Variant::STRING, "playback/curr_animation", PROPERTY_HINT_ENUM, __str_hint));
+    _p_list->push_back(PropertyInfo(Variant::INT, "playback/loop", PROPERTY_HINT_RANGE, "-1,100,1"));
 }
