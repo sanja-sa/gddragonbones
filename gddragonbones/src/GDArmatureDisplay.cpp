@@ -14,9 +14,9 @@ GDArmatureDisplay::~GDArmatureDisplay()
 	p_armature = nullptr;
 }
 
-void GDArmatureDisplay::dbInit(Armature* armature)
+void GDArmatureDisplay::dbInit(Armature* _p_armature)
 {
-	p_armature = armature;
+    p_armature = _p_armature;
 }
 
 void GDArmatureDisplay::dbClear()
@@ -28,13 +28,13 @@ void GDArmatureDisplay::dbUpdate()
 {
 }
 
-void GDArmatureDisplay::dispatchDBEvent(const std::string& type, EventObject* value)
+void GDArmatureDisplay::dispatchDBEvent(const std::string& _type, EventObject* _value)
 {
     if(p_owner)
-        p_owner->dispatch_event(String(type.c_str()), value);
+        p_owner->dispatch_event(String(_type.c_str()), _value);
 }
 
-void GDArmatureDisplay::dispose(bool disposeProxy)
+void GDArmatureDisplay::dispose(bool _disposeProxy)
 {
 	if (p_armature)
 	{
@@ -61,7 +61,7 @@ void GDArmatureDisplay::add_parent_class(bool _b_debug, const Ref<Texture>& _m_t
     }
 }
 
-void GDArmatureDisplay::update_child_colors()
+void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending)
 {
     if(!p_armature)
         return;
@@ -70,20 +70,13 @@ void GDArmatureDisplay::update_child_colors()
     for (auto item : arr)
     {
         if (!item) continue;
-        item->_colorDirty = true;
-        item->update(0);
-    }
-}
 
-void GDArmatureDisplay::update_child_blends()
-{
-    if(!p_armature)
-        return;
-    auto arr = p_armature->getSlots();
-    for (auto item : arr)
-    {
-        if (!item) continue;
-        item->invalidUpdate();
+        if(_b_color)
+            item->_colorDirty = true;
+
+        if(_b_blending)
+            item->invalidUpdate();
+
         item->update(0);
     }
 }

@@ -88,6 +88,8 @@ GDDragonBones::GDDragonBones()
     c_loop = -1;
     b_inited = false;
     b_try_playing = false;
+    b_flip_x = false;
+    b_flip_y = false;
 }
 
 GDDragonBones::~GDDragonBones()
@@ -198,9 +200,13 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
 
     b_inited = true;
 
-    // update color and opacity
-    p_armature->update_child_colors();
-    p_armature->update_child_blends();
+    // update color and opacity and blending
+    p_armature->update_childs(true, true);
+
+    // update flip
+    p_armature->getArmature()->setFlipX(b_flip_x);
+    p_armature->getArmature()->setFlipY(b_flip_y);
+    p_armature->getArmature()->advanceTime(0);
 
     _change_notify();
     update();
@@ -215,14 +221,14 @@ void GDDragonBones::set_opacity(float _f_opacity)
 {
     GDOwnerNode::set_opacity(_f_opacity);
     if(p_armature)
-        p_armature->update_child_colors();
+        p_armature->update_childs(true);
 }
 
 float GDDragonBones::get_opacity() const
 {
 #ifdef TOOLS_ENABLED
     if(p_armature)
-         p_armature->update_child_colors();
+         p_armature->update_childs(true);
 #endif
     return GDOwnerNode::get_opacity();
 }
@@ -266,7 +272,7 @@ void GDDragonBones::set_modulate(const Color& _p_color)
 {
     modulate = _p_color;
     if(p_armature)
-        p_armature->update_child_colors();
+        p_armature->update_childs(true);
 }
 
 Color GDDragonBones::get_modulate() const
@@ -279,14 +285,14 @@ void GDDragonBones::set_blend_mode(CanvasItem::BlendMode _blend_mode)
 {
     GDOwnerNode::set_blend_mode(_blend_mode);
     if(p_armature)
-        p_armature->update_child_blends();
+        p_armature->update_childs(false, true);
 }
 
 CanvasItem::BlendMode GDDragonBones::get_blend_mode() const
 {
 #ifdef TOOLS_ENABLED
     if(p_armature)
-        p_armature->update_child_blends();
+        p_armature->update_childs(false, true);
 #endif
     return GDOwnerNode::get_blend_mode();
 }
@@ -315,6 +321,33 @@ bool GDDragonBones::is_debug() const
     return b_debug;
 }
 
+void GDDragonBones::flip_x(bool _b_flip)
+{
+    b_flip_x = _b_flip;
+    if(!p_armature)
+        return;
+    p_armature->getArmature()->setFlipX(_b_flip);
+    p_armature->getArmature()->advanceTime(0);
+}
+
+bool GDDragonBones::is_fliped_x() const
+{
+    return b_flip_x;
+}
+
+void GDDragonBones::flip_y(bool _b_flip)
+{
+    b_flip_y = _b_flip;
+    if(!p_armature)
+        return;
+    p_armature->getArmature()->setFlipY(_b_flip);
+    p_armature->getArmature()->advanceTime(0);
+}
+
+bool GDDragonBones::is_fliped_y() const
+{
+    return b_flip_y;
+}
 
 void GDDragonBones::set_speed(float _f_speed)
 {
@@ -633,6 +666,11 @@ void GDDragonBones::_bind_methods()
     ObjectTypeDB::bind_method(_MD("set_debug", "debug"), &GDDragonBones::set_debug);
     ObjectTypeDB::bind_method(_MD("is_debug"), &GDDragonBones::is_debug);
 
+    ObjectTypeDB::bind_method(_MD("flip_x", "enable_flip"), &GDDragonBones::flip_x);
+    ObjectTypeDB::bind_method(_MD("is_fliped_x"), &GDDragonBones::is_fliped_x);
+    ObjectTypeDB::bind_method(_MD("flip_y", "enable_flip"), &GDDragonBones::flip_y);
+    ObjectTypeDB::bind_method(_MD("is_fliped_y"), &GDDragonBones::is_fliped_y);
+
     ObjectTypeDB::bind_method(_MD("set_speed", "speed"), &GDDragonBones::set_speed);
     ObjectTypeDB::bind_method(_MD("get_speed"), &GDDragonBones::get_speed);
 
@@ -641,6 +679,8 @@ void GDDragonBones::_bind_methods()
 
     ADD_PROPERTYNZ(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), _SCS("set_texture"), _SCS("get_texture"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), _SCS("set_debug"), _SCS("is_debug"));
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flipX"), _SCS("flip_x"), _SCS("is_fliped_x"));
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flipY"), _SCS("flip_y"), _SCS("is_fliped_y"));
     ADD_PROPERTY(PropertyInfo(Variant::COLOR, "modulate"), _SCS("set_modulate"), _SCS("get_modulate"));
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, "GDDragonBonesResource"), _SCS("set_resource"), _SCS("get_resource"));
 

@@ -58,6 +58,8 @@ private:
     bool                        b_debug;
     bool                        b_inited;
     bool                        b_try_playing;
+    bool                        b_flip_x;
+    bool                        b_flip_y;
 
 protected:
     void _notification(int _what);
@@ -119,6 +121,12 @@ public:
     void    play(bool _b_play = true);
     void    play_from_time(float _f_time);
     void    play_from_progress(float _f_progress);
+
+    void    flip_x(bool _b_flip);
+    bool    is_fliped_x() const;
+
+    void    flip_y(bool _b_flip);
+    bool    is_fliped_y() const;
 
     bool    is_playing() const;
 

@@ -25,15 +25,15 @@ public:
         return memnew(GDArmatureDisplay);
     }
 
-    void addEvent(const std::string& type, const std::function<void(EventObject*)>& callback);
-    void removeEvent(const std::string& type);
+    void addEvent(const std::string& _type, const std::function<void(EventObject*)>& _callback);
+    void removeEvent(const std::string& _type);
 
-	bool hasDBEventListener(const std::string& type) const override { return true; }
-    void addDBEventListener(const std::string& type, const std::function<void(EventObject*)>& listener) {}
-    void removeDBEventListener(const std::string& type, const std::function<void(EventObject*)>& listener) {}
-    void dispatchDBEvent(const std::string& type, EventObject* value);
+    bool hasDBEventListener(const std::string& _type) const override { return true; }
+    void addDBEventListener(const std::string& _type, const std::function<void(EventObject*)>& _listener) {}
+    void removeDBEventListener(const std::string& _type, const std::function<void(EventObject*)>& _listener) {}
+    void dispatchDBEvent(const std::string& _type, EventObject* _value);
 
-	void dbInit(Armature* armature) override;
+    void dbInit(Armature* _p_armature) override;
 	void dbClear() override;
 	void dbUpdate() override;
 
@@ -43,11 +43,10 @@ public:
 	Animation* getAnimation() const override { return p_armature->getAnimation(); }
 
     void    add_parent_class(bool _b_debug, const Ref<Texture>& _m_texture_atla);
-    void    update_child_colors();
-    void    update_child_blends();
+    void    update_childs(bool _b_color, bool _b_blending = false);
     void    update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
-    void    set_debug(bool _b_debug);
 
+    void    set_debug(bool _b_debug);
 };
 
 DRAGONBONES_NAMESPACE_END
