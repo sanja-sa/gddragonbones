@@ -194,6 +194,13 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
     if(!m_texture_atlas.is_valid() || __old_texture_path != m_res->str_default_tex_path)
         m_texture_atlas = ResourceLoader::load(m_res->str_default_tex_path);
 
+    // correction for old version of DB tad files (Zero width, height)
+    if(m_texture_atlas.is_valid())
+    {
+        __p_tad->height = m_texture_atlas->get_height();
+        __p_tad->width = m_texture_atlas->get_width();
+    }
+
     p_armature->add_parent_class(b_debug, m_texture_atlas);
     // add main armature
     add_child(p_armature);
