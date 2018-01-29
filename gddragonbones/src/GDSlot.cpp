@@ -133,6 +133,7 @@ void GDSlot::_updateFrame()
 {
         const auto meshData = _display == _meshDisplay ? _meshData : nullptr;
         auto currentTextureData = static_cast<GDTextureData*>(_textureData);
+        const auto hasFFD = !_deformVertices.empty()?-1.0:1.0;
 
         if (_displayIndex >= 0 && _display != nullptr && currentTextureData != nullptr)
         {
@@ -171,7 +172,7 @@ void GDSlot::_updateFrame()
                         __get_uv_pt(__uv, currentTextureData->rotated, u, v, region, atlas);
                         frameDisplay->verticesColor[iH] = Color(1,1,1,1);
                         frameDisplay->verticesUV[iH] = __uv;
-                        frameDisplay->verticesPos[iH] = Point2(floatArray[vertexOffset + i], floatArray[vertexOffset + i + 1]);
+                        frameDisplay->verticesPos[iH] = Point2(floatArray[vertexOffset + i], hasFFD * floatArray[vertexOffset + i + 1]);
                     }
 
                     // setup indicies
@@ -206,10 +207,10 @@ void GDSlot::_updateFrame()
                     frameDisplay->verticesColor[2] = Color(1,1,1,1);
                     frameDisplay->verticesColor[3] = Color(1,1,1,1);
 
-                    frameDisplay->verticesPos[3] = Vector2(-width, -height);
-                    frameDisplay->verticesPos[2] = Vector2(width, -height);
-                    frameDisplay->verticesPos[1] = Vector2(width, height);
-                    frameDisplay->verticesPos[0] = Vector2(-width, height);
+                    frameDisplay->verticesPos[3] = Vector2(-width, hasFFD * -height);
+                    frameDisplay->verticesPos[2] = Vector2(width, hasFFD * -height);
+                    frameDisplay->verticesPos[1] = Vector2(width, hasFFD * height);
+                    frameDisplay->verticesPos[0] = Vector2(-width, hasFFD * height);
 
                     __get_uv_pt(frameDisplay->verticesUV[0], currentTextureData->rotated, 0, 0, region, atlas);
                     __get_uv_pt(frameDisplay->verticesUV[1], currentTextureData->rotated, 1.f, 0, region, atlas);

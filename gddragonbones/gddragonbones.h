@@ -130,7 +130,7 @@ public:
 
     bool    is_playing() const;
 
-    bool    has_anim(const String& _str_anim);
+    bool    has_anim(const String& _str_anim) const;
     void    stop(bool _b_all = false);
     inline void    stop_all() { stop(true); }
 };

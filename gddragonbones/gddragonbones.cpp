@@ -112,8 +112,8 @@ void GDDragonBones::_cleanup()
 
     if(p_armature)
     {
-	if (p_armature->is_inside_tree())
-		remove_child(p_armature);
+        if (p_armature->is_inside_tree())
+            remove_child(p_armature);
         p_armature = nullptr;
     }
 
@@ -158,20 +158,21 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
     String __old_texture_path = "";
     if(m_res.is_valid())
         __old_texture_path = m_res->str_default_tex_path;
-   else
+   else if(_p_data.is_valid())
         __old_texture_path = _p_data->str_default_tex_path;
 
     if (m_res == _p_data)
 		return;
 
     stop();
-
     _cleanup();
 
     m_res = _p_data;
     if (m_res.is_null())
     {
+        m_texture_atlas = Ref<Texture>();
         ERR_PRINT("Null resources");
+        _change_notify();
 		return;
     }
 
@@ -191,8 +192,12 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
     // add children armature
     p_armature->p_owner = this;
 
-    if(!m_texture_atlas.is_valid() || __old_texture_path != m_res->str_default_tex_path)
-        m_texture_atlas = ResourceLoader::load(m_res->str_default_tex_path);
+    Ref<Texture>  __new_texture = ResourceLoader::load(m_res->str_default_tex_path);
+
+    if(!m_texture_atlas.is_valid() || __old_texture_path != m_res->str_default_tex_path || __new_texture != m_texture_atlas)
+    {
+        m_texture_atlas = __new_texture;
+    }
 
     // correction for old version of DB tad files (Zero width, height)
     if(m_texture_atlas.is_valid())
@@ -272,7 +277,6 @@ void GDDragonBones::fade_out(const String& _name_anim)
     b_playing = false;
 
     _reset();
-    _change_notify();
 }
 
 void GDDragonBones::set_modulate(const Color& _p_color)
@@ -481,7 +485,7 @@ void   GDDragonBones::play_from_progress(float _f_progress)
          p_armature->getAnimation()->gotoAndPlayByProgress(str_curr_anim.ascii().get_data(), CLAMP(_f_progress, 0, 1.f), c_loop);
 }
 
-bool GDDragonBones::has_anim(const String& _str_anim)
+bool GDDragonBones::has_anim(const String& _str_anim) const
 {
     return p_armature->getAnimation()->hasAnimation(_str_anim.ascii().get_data());
 }
@@ -497,12 +501,11 @@ void GDDragonBones::stop(bool _b_all)
         p_armature->getAnimation()->stop(_b_all?"":str_curr_anim.ascii().get_data());
 
     _reset();
-    _change_notify();
 }
 
 float GDDragonBones::tell() const
 {
-    if(b_inited && str_curr_anim != "[none]" && p_armature->getAnimation())
+    if(b_inited && has_anim(str_curr_anim))
     {
         AnimationState* __p_state = p_armature->getAnimation()->getState(str_curr_anim.ascii().get_data());
         if(__p_state)
@@ -513,7 +516,7 @@ float GDDragonBones::tell() const
 
 void GDDragonBones::seek(float _f_p)
 {
-    if(b_inited && str_curr_anim != "[none]" && p_armature->getAnimation())
+    if(b_inited && has_anim(str_curr_anim))
     {
         stop();
         p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data(), CLAMP(_f_p, 0, 1.f));
@@ -608,10 +611,7 @@ bool GDDragonBones::_set(const StringName& _str_name, const Variant& _c_r_value)
 
     else if (name == "playback/progress")
     {
-       if (b_inited && has_anim(str_curr_anim))
-       {
-           seek(_c_r_value);
-       }
+       seek(_c_r_value);
     }
 
     return true;
