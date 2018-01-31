@@ -62,7 +62,7 @@ void GDArmatureDisplay::add_parent_class(bool _b_debug, const Ref<Texture>& _m_t
     }
 }
 
-void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending, bool _b_inherit_material)
+void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending)
 {
     if(!p_armature)
         return;
@@ -75,14 +75,6 @@ void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending, bool _b_i
         if(_b_color)
             item->_colorDirty = true;
 
-        auto display = static_cast<GDDisplay*>(item->getRawDisplay());
-        if (display)
-        {
-             display->set_use_parent_material(_b_inherit_material);
-             display->update();
-             item->invalidUpdate();
-        }
-
         if(_b_blending)
             item->invalidUpdate();
 
@@ -90,10 +82,28 @@ void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending, bool _b_i
     }
 }
 
+void GDArmatureDisplay::update_material_inheritance(bool _b_inherit_material)
+{
+    if(!p_armature)
+        return;
+
+    auto arr = p_armature->getSlots();
+    for (auto item : arr)
+    {
+        if (!item) continue;
+        auto display = item->getRawDisplay();
+        if (!display) continue;
+
+        static_cast<GDDisplay*>(display)->set_use_parent_material(_b_inherit_material);
+    }
+}
+
+
 void GDArmatureDisplay::update_texture_atlas(const Ref<Texture>& _m_texture_atlas)
 {
     if(!p_armature)
         return;
+
     auto arr = p_armature->getSlots();
     for (auto item : arr)
     {

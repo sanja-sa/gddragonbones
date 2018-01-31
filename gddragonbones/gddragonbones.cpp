@@ -213,10 +213,8 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
     // add children armature
     p_armature->p_owner = this;
 
-    Ref<Texture>  __new_texture = ResourceLoader::load(m_res->str_default_tex_path);
-
-    if(!m_texture_atlas.is_valid() || __old_texture_path != m_res->str_default_tex_path || __new_texture != m_texture_atlas)
-        m_texture_atlas = __new_texture;
+    if(!m_texture_atlas.is_valid() || __old_texture_path != m_res->str_default_tex_path)
+        m_texture_atlas = ResourceLoader::load(m_res->str_default_tex_path);
 
     // correction for old version of DB tad files (Zero width, height)
     if(m_texture_atlas.is_valid())
@@ -233,6 +231,9 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
 
     // update color and opacity and blending
     p_armature->update_childs(true, true);
+
+    // update material inheritance
+    p_armature->update_material_inheritance(b_inherit_child_material);
 
     // update flip
     p_armature->getArmature()->setFlipX(b_flip_x);
@@ -251,7 +252,7 @@ Ref<GDDragonBones::GDDragonBonesResource> GDDragonBones::get_resource()
 void GDDragonBones::set_inherit_material(bool _b_enable)
 {
     b_inherit_child_material = _b_enable;
-    p_armature->update_childs(false, false, b_inherit_child_material);
+    p_armature->update_material_inheritance(b_inherit_child_material);
 }
 
 bool GDDragonBones::is_material_inherited() const
@@ -434,7 +435,6 @@ void GDDragonBones::_notification(int _what)
                 set_physics_process(false);
 #else
                 set_fixed_process(false);
-
 #endif
             }
         }
@@ -470,7 +470,6 @@ void GDDragonBones::_notification(int _what)
         }
          break;
 #else
-
         case NOTIFICATION_FIXED_PROCESS:
         {
 
@@ -605,7 +604,11 @@ void GDDragonBones::_set_process(bool _b_process, bool _b_force)
 
 void GDDragonBones::set_texture(const Ref<Texture>& _p_texture) {
 
-    if (_p_texture == m_texture_atlas)
+    if (_p_texture.is_valid()
+            && m_texture_atlas.is_valid()
+            && (_p_texture == m_texture_atlas
+               || m_texture_atlas->get_height() != _p_texture->get_height()
+               || m_texture_atlas->get_width()  != _p_texture->get_width()))
         return;
 
     m_texture_atlas = _p_texture;
@@ -626,7 +629,6 @@ void GDDragonBones::set_texture(const Ref<Texture>& _p_texture) {
 
 Ref<Texture> GDDragonBones::get_texture() const
 {
-
     return m_texture_atlas;
 }
 
@@ -699,7 +701,6 @@ void GDDragonBones::_bind_methods()
     CLASS_BIND_GODO::bind_method(METH("set_resource", "dragonbones"), &GDDragonBones::set_resource);
     CLASS_BIND_GODO::bind_method(METH("get_resource"), &GDDragonBones::get_resource);
 
-
     CLASS_BIND_GODO::bind_method(METH("set_inherit_material"), &GDDragonBones::set_inherit_material);
     CLASS_BIND_GODO::bind_method(METH("is_material_inherited"), &GDDragonBones::is_material_inherited);
 
@@ -767,7 +768,7 @@ void GDDragonBones::_bind_methods()
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback/progress", PROPERTY_HINT_RANGE, "0,1,0.010"), _SCS("seek"), _SCS("tell"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "playback/play"), _SCS("play"), _SCS("is_playing"));
 
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use parent material"), _SCS("set_inherit_material"), _SCS("is_material_inherited"));
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "childs use this material"), _SCS("set_inherit_material"), _SCS("is_material_inherited"));
 
     ADD_SIGNAL(MethodInfo("dragon_anim_start", PropertyInfo(Variant::STRING, "anim")));
     ADD_SIGNAL(MethodInfo("dragon_anim_complete", PropertyInfo(Variant::STRING, "anim")));
