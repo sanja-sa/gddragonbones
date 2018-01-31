@@ -6,7 +6,6 @@
 #include "GDArmatureDisplay.h"
 #include "GDMesh.h"
 
-#include "core/globals.h"
 #include "core/os/file_access.h"
 #include "core/os/os.h"
 

@@ -7,9 +7,19 @@
 
 DRAGONBONES_NAMESPACE_BEGIN
 
+#if (VERSION_MAJOR == 3)
+    #define MATRIX_TRANSFORM  Transform2D
+#else
+    #define MATRIX_TRANSFORM  Matrix32
+#endif
+
 void GDSlot::_updateZOrder()
 {
+#if (VERSION_MAJOR == 3)
+    _renderDisplay->set_z_index(_zOrder);
+#else
     _renderDisplay->set_z(_zOrder);
+#endif
 }
 
 void GDSlot::_updateVisible()
@@ -25,9 +35,12 @@ void GDSlot::_updateBlendMode()
 	if (_renderDisplay)
 	{
         CanvasItem::BlendMode __blend = CanvasItem::BLEND_MODE_MIX;
-        GDOwnerNode* __p_owner = _renderDisplay->p_owner;
+#if (VERSION_MAJOR == 3)
+#else
+         GDOwnerNode* __p_owner = _renderDisplay->p_owner;
         if(__p_owner)
             __blend = __p_owner->get_blend_mode();
+#endif
         if(!__blend)
         {
             switch (_blendMode)
@@ -77,7 +90,11 @@ void GDSlot::_updateColor()
    GDOwnerNode* __p_owner = _renderDisplay->p_owner;
    if(__p_owner)
    {
+#if (VERSION_MAJOR == 3)
+        __color.a *= __p_owner->modulate.a;
+#else
        __color.a *= __p_owner->modulate.a * __p_owner->get_opacity();
+#endif
        __color.r *= __p_owner->modulate.r;
        __color.g *= __p_owner->modulate.g;
        __color.b *= __p_owner->modulate.b;
@@ -323,7 +340,7 @@ void GDSlot::_updateMesh()
 
 void GDSlot::_identityTransform()
 {
-    auto matrix = Matrix32();
+    auto matrix = MATRIX_TRANSFORM();
     matrix.scale(Size2(_textureScale, _textureScale));
     _renderDisplay->set_transform(matrix);
     _renderDisplay->update();
@@ -350,7 +367,7 @@ void GDSlot::_updateTransform()
      pos.y = globalTransformMatrix.ty - (globalTransformMatrix.b * anchorPoint.x - globalTransformMatrix.d * anchorPoint.y);
    }
 
-   auto matrix = Matrix32(
+   auto matrix = MATRIX_TRANSFORM(
                     globalTransformMatrix.a * _textureScale,
                     globalTransformMatrix.b * _textureScale,
                     -globalTransformMatrix.c * _textureScale,

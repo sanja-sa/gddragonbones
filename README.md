@@ -1,12 +1,12 @@
 # GDDragonBones Plugin
-Plugin module for Godot 2.1.4 Game Engine to use DragonBones
+Plugin module for Godot Game Engine to use DragonBones
 
 ## Links
 * Homepage Godot: https://godotengine.org
 * Homepage DragonBones: http://dragonbones.com
 
 #### Support Versions
-* Godot 2.1.4
+* Godot 2.1 & Godot 3
 * DragonBones Pro 5.6
 
 #### Compiling

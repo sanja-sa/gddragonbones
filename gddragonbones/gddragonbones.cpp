@@ -1,11 +1,23 @@
 #include "gddragonbones.h"
 #include "core/io/resource_loader.h"
 
-#include "core/globals.h"
 #include "core/os/file_access.h"
 #include "core/os/os.h"
 
 #include "method_bind_ext.gen.inc"
+
+#if (VERSION_MAJOR == 3)
+    #define CLASS_BIND_GODO  ClassDB
+    #define METH             D_METHOD
+    #define _SCS(val)        val
+#else
+
+#include "core/globals.h"
+
+    #define CLASS_BIND_GODO  ObjectTypeDB
+    #define METH             _MD
+
+#endif
 
 //////////////////////////////////////////////////////////////////
 //// Resource
@@ -90,6 +102,7 @@ GDDragonBones::GDDragonBones()
     b_try_playing = false;
     b_flip_x = false;
     b_flip_y = false;
+    b_inherit_child_material = true;
 }
 
 GDDragonBones::~GDDragonBones()
@@ -122,8 +135,12 @@ void GDDragonBones::_cleanup()
 
 void GDDragonBones::dispatch_snd_event(const String& _str_type, const EventObject* _p_value)
 {
+#if (VERSION_MAJOR == 3)
+    if(Engine::get_singleton()->is_editor_hint())
+#else
     if(get_tree()->is_editor_hint())
-	return;
+#endif
+        return;
 
    if(_str_type == EventObject::SOUND_EVENT)
        emit_signal("dragon_anim_snd_event", String(_p_value->animationState->name.c_str()), String(_p_value->name.c_str()));
@@ -131,7 +148,11 @@ void GDDragonBones::dispatch_snd_event(const String& _str_type, const EventObjec
 
 void GDDragonBones::dispatch_event(const String& _str_type, const EventObject* _p_value)
 {
+#if (VERSION_MAJOR == 3)
+    if(Engine::get_singleton()->is_editor_hint())
+#else
     if(get_tree()->is_editor_hint())
+#endif
         return;
 
     if(_str_type == EventObject::START)
@@ -195,9 +216,7 @@ void GDDragonBones::set_resource(Ref<GDDragonBones::GDDragonBonesResource> _p_da
     Ref<Texture>  __new_texture = ResourceLoader::load(m_res->str_default_tex_path);
 
     if(!m_texture_atlas.is_valid() || __old_texture_path != m_res->str_default_tex_path || __new_texture != m_texture_atlas)
-    {
         m_texture_atlas = __new_texture;
-    }
 
     // correction for old version of DB tad files (Zero width, height)
     if(m_texture_atlas.is_valid())
@@ -229,6 +248,19 @@ Ref<GDDragonBones::GDDragonBonesResource> GDDragonBones::get_resource()
     return m_res;
 }
 
+void GDDragonBones::set_inherit_material(bool _b_enable)
+{
+    b_inherit_child_material = _b_enable;
+    p_armature->update_childs(false, false, b_inherit_child_material);
+}
+
+bool GDDragonBones::is_material_inherited() const
+{
+    return b_inherit_child_material;
+}
+
+#if (VERSION_MAJOR == 3)
+#else
 void GDDragonBones::set_opacity(float _f_opacity)
 {
     GDOwnerNode::set_opacity(_f_opacity);
@@ -244,6 +276,35 @@ float GDDragonBones::get_opacity() const
 #endif
     return GDOwnerNode::get_opacity();
 }
+
+void GDDragonBones::set_blend_mode(CanvasItem::BlendMode _blend_mode)
+{
+    GDOwnerNode::set_blend_mode(_blend_mode);
+    if(p_armature)
+        p_armature->update_childs(false, true);
+}
+
+CanvasItem::BlendMode GDDragonBones::get_blend_mode() const
+{
+#ifdef TOOLS_ENABLED
+    if(p_armature)
+        p_armature->update_childs(false, true);
+#endif
+    return GDOwnerNode::get_blend_mode();
+}
+
+void GDDragonBones::set_modulate(const Color& _p_color)
+{
+    modulate = _p_color;
+    if(p_armature)
+        p_armature->update_childs(true);
+}
+
+Color GDDragonBones::get_modulate() const
+{
+    return modulate;
+}
+#endif
 
 void GDDragonBones::fade_in(const String& _name_anim, float _time, int _loop, int _layer, const String& _group, GDDragonBones::AnimFadeOutMode _fade_out_mode)
 {
@@ -277,35 +338,6 @@ void GDDragonBones::fade_out(const String& _name_anim)
     b_playing = false;
 
     _reset();
-}
-
-void GDDragonBones::set_modulate(const Color& _p_color)
-{
-    modulate = _p_color;
-    if(p_armature)
-        p_armature->update_childs(true);
-}
-
-Color GDDragonBones::get_modulate() const
-{
-    return modulate;
-}
-
-
-void GDDragonBones::set_blend_mode(CanvasItem::BlendMode _blend_mode)
-{
-    GDOwnerNode::set_blend_mode(_blend_mode);
-    if(p_armature)
-        p_armature->update_childs(false, true);
-}
-
-CanvasItem::BlendMode GDDragonBones::get_blend_mode() const
-{
-#ifdef TOOLS_ENABLED
-    if(p_armature)
-        p_armature->update_childs(false, true);
-#endif
-    return GDOwnerNode::get_blend_mode();
 }
 
 void GDDragonBones::set_active(bool _b_active)
@@ -397,8 +429,13 @@ void GDDragonBones::_notification(int _what)
         {
             if (!b_processing)
             {
-                set_fixed_process(false);
                 set_process(false);
+#if (VERSION_MAJOR == 3)
+                set_physics_process(false);
+#else
+                set_fixed_process(false);
+
+#endif
             }
         }
         break;
@@ -421,6 +458,19 @@ void GDDragonBones::_notification(int _what)
         }
         break;
 
+#if (VERSION_MAJOR == 3)
+        case NOTIFICATION_PHYSICS_PROCESS:
+        {
+
+                if (m_anim_mode == ANIMATION_PROCESS_IDLE)
+                    break;
+
+                if (b_processing)
+                    p_factory->update(get_physics_process_delta_time());
+        }
+         break;
+#else
+
         case NOTIFICATION_FIXED_PROCESS:
         {
 
@@ -431,7 +481,7 @@ void GDDragonBones::_notification(int _what)
                 p_factory->update(get_fixed_process_delta_time());
         }
         break;
-
+#endif
         case NOTIFICATION_EXIT_TREE:
         {
 
@@ -542,7 +592,12 @@ void GDDragonBones::_set_process(bool _b_process, bool _b_force)
 
     switch (m_anim_mode)
     {
+
+#if (VERSION_MAJOR == 3)
+        case ANIMATION_PROCESS_FIXED: set_physics_process(_b_process && b_active); break;
+#else
         case ANIMATION_PROCESS_FIXED: set_fixed_process(_b_process && b_active); break;
+#endif
         case ANIMATION_PROCESS_IDLE: set_process(_b_process && b_active); break;
     }
     b_processing = _b_process;
@@ -632,69 +687,87 @@ bool GDDragonBones::_get(const StringName& _str_name, Variant &_r_ret) const
 }
 
 void GDDragonBones::_bind_methods()
-{
+{    
+#if (VERSION_MAJOR == 3)
+    CLASS_BIND_GODO::bind_method(METH("set_texture", "texture"), &GDDragonBones::set_texture);
+    CLASS_BIND_GODO::bind_method(METH("get_texture"), &GDDragonBones::get_texture);
+#else
+    CLASS_BIND_GODO::bind_method(METH("set_texture", "texture:Texture"), &GDDragonBones::set_texture);
+    CLASS_BIND_GODO::bind_method(METH("get_texture:Texture"), &GDDragonBones::get_texture);
+#endif
 
-    ObjectTypeDB::bind_method(_MD("set_texture", "texture:Texture"), &GDDragonBones::set_texture);
-    ObjectTypeDB::bind_method(_MD("get_texture:Texture"), &GDDragonBones::get_texture);
+    CLASS_BIND_GODO::bind_method(METH("set_resource", "dragonbones"), &GDDragonBones::set_resource);
+    CLASS_BIND_GODO::bind_method(METH("get_resource"), &GDDragonBones::get_resource);
 
-    ObjectTypeDB::bind_method(_MD("set_resource", "dragonbones"), &GDDragonBones::set_resource);
-    ObjectTypeDB::bind_method(_MD("get_resource"), &GDDragonBones::get_resource);
 
-    ObjectTypeDB::bind_method(_MD("set_modulate", "modulate"), &GDDragonBones::set_modulate);
-    ObjectTypeDB::bind_method(_MD("get_modulate"), &GDDragonBones::get_modulate);
+    CLASS_BIND_GODO::bind_method(METH("set_inherit_material"), &GDDragonBones::set_inherit_material);
+    CLASS_BIND_GODO::bind_method(METH("is_material_inherited"), &GDDragonBones::is_material_inherited);
 
-    ObjectTypeDB::bind_method(_MD("set_opacity", "opacity"), &GDDragonBones::set_opacity);
-    ObjectTypeDB::bind_method(_MD("get_opacity"), &GDDragonBones::get_opacity);
+#if (VERSION_MAJOR == 3)
+#else
+    CLASS_BIND_GODO::bind_method(METH("set_modulate", "modulate"), &GDDragonBones::set_modulate);
+    CLASS_BIND_GODO::bind_method(METH("get_modulate"), &GDDragonBones::get_modulate);
 
-    ObjectTypeDB::bind_method(_MD("set_blend_mode", "blend_mode"), &GDDragonBones::set_blend_mode);
-    ObjectTypeDB::bind_method(_MD("get_blend_mode"), &GDDragonBones::get_blend_mode);
+    CLASS_BIND_GODO::bind_method(METH("set_opacity", "opacity"), &GDDragonBones::set_opacity);
+    CLASS_BIND_GODO::bind_method(METH("get_opacity"), &GDDragonBones::get_opacity);
 
-    ObjectTypeDB::bind_method(_MD("fade_in", "anim_name", "time", "loop", "layer", "group", "fade_out_mode"), &GDDragonBones::fade_in);
-    ObjectTypeDB::bind_method(_MD("fade_out", "anim_name"), &GDDragonBones::fade_out);
+    CLASS_BIND_GODO::bind_method(METH("set_blend_mode", "blend_mode"), &GDDragonBones::set_blend_mode);
+    CLASS_BIND_GODO::bind_method(METH("get_blend_mode"), &GDDragonBones::get_blend_mode);
+#endif
 
-    ObjectTypeDB::bind_method(_MD("stop"), &GDDragonBones::stop);
-    ObjectTypeDB::bind_method(_MD("stop_all"), &GDDragonBones::stop_all);
-    ObjectTypeDB::bind_method(_MD("reset"), &GDDragonBones::_reset);
-    ObjectTypeDB::bind_method(_MD("play"), &GDDragonBones::play);
-    ObjectTypeDB::bind_method(_MD("play_from_time"), &GDDragonBones::play_from_time);
-    ObjectTypeDB::bind_method(_MD("play_from_progress"), &GDDragonBones::play_from_progress);
+    CLASS_BIND_GODO::bind_method(METH("fade_in", "anim_name", "time", "loop", "layer", "group", "fade_out_mode"), &GDDragonBones::fade_in);
+    CLASS_BIND_GODO::bind_method(METH("fade_out", "anim_name"), &GDDragonBones::fade_out);
 
-    ObjectTypeDB::bind_method(_MD("has", "name"), &GDDragonBones::has_anim);
-    ObjectTypeDB::bind_method(_MD("is_playing"), &GDDragonBones::is_playing);
+    CLASS_BIND_GODO::bind_method(METH("stop"), &GDDragonBones::stop);
+    CLASS_BIND_GODO::bind_method(METH("stop_all"), &GDDragonBones::stop_all);
+    CLASS_BIND_GODO::bind_method(METH("reset"), &GDDragonBones::_reset);
+    CLASS_BIND_GODO::bind_method(METH("play"), &GDDragonBones::play);
+    CLASS_BIND_GODO::bind_method(METH("play_from_time"), &GDDragonBones::play_from_time);
+    CLASS_BIND_GODO::bind_method(METH("play_from_progress"), &GDDragonBones::play_from_progress);
 
-    ObjectTypeDB::bind_method(_MD("get_current_animation"), &GDDragonBones::get_current_animation);
+    CLASS_BIND_GODO::bind_method(METH("has", "name"), &GDDragonBones::has_anim);
+    CLASS_BIND_GODO::bind_method(METH("is_playing"), &GDDragonBones::is_playing);
 
-    ObjectTypeDB::bind_method(_MD("seek", "pos"), &GDDragonBones::seek);
-    ObjectTypeDB::bind_method(_MD("tell"), &GDDragonBones::tell);
+    CLASS_BIND_GODO::bind_method(METH("get_current_animation"), &GDDragonBones::get_current_animation);
 
-    ObjectTypeDB::bind_method(_MD("set_active", "active"), &GDDragonBones::set_active);
-    ObjectTypeDB::bind_method(_MD("is_active"), &GDDragonBones::is_active);
+    CLASS_BIND_GODO::bind_method(METH("seek", "pos"), &GDDragonBones::seek);
+    CLASS_BIND_GODO::bind_method(METH("tell"), &GDDragonBones::tell);
 
-    ObjectTypeDB::bind_method(_MD("set_debug", "debug"), &GDDragonBones::set_debug);
-    ObjectTypeDB::bind_method(_MD("is_debug"), &GDDragonBones::is_debug);
+    CLASS_BIND_GODO::bind_method(METH("set_active", "active"), &GDDragonBones::set_active);
+    CLASS_BIND_GODO::bind_method(METH("is_active"), &GDDragonBones::is_active);
 
-    ObjectTypeDB::bind_method(_MD("flip_x", "enable_flip"), &GDDragonBones::flip_x);
-    ObjectTypeDB::bind_method(_MD("is_fliped_x"), &GDDragonBones::is_fliped_x);
-    ObjectTypeDB::bind_method(_MD("flip_y", "enable_flip"), &GDDragonBones::flip_y);
-    ObjectTypeDB::bind_method(_MD("is_fliped_y"), &GDDragonBones::is_fliped_y);
+    CLASS_BIND_GODO::bind_method(METH("set_debug", "debug"), &GDDragonBones::set_debug);
+    CLASS_BIND_GODO::bind_method(METH("is_debug"), &GDDragonBones::is_debug);
 
-    ObjectTypeDB::bind_method(_MD("set_speed", "speed"), &GDDragonBones::set_speed);
-    ObjectTypeDB::bind_method(_MD("get_speed"), &GDDragonBones::get_speed);
+    CLASS_BIND_GODO::bind_method(METH("flip_x", "enable_flip"), &GDDragonBones::flip_x);
+    CLASS_BIND_GODO::bind_method(METH("is_fliped_x"), &GDDragonBones::is_fliped_x);
+    CLASS_BIND_GODO::bind_method(METH("flip_y", "enable_flip"), &GDDragonBones::flip_y);
+    CLASS_BIND_GODO::bind_method(METH("is_fliped_y"), &GDDragonBones::is_fliped_y);
 
-    ObjectTypeDB::bind_method(_MD("set_animation_process_mode","mode"),&GDDragonBones::set_animation_process_mode);
-    ObjectTypeDB::bind_method(_MD("get_animation_process_mode"),&GDDragonBones::get_animation_process_mode);
+    CLASS_BIND_GODO::bind_method(METH("set_speed", "speed"), &GDDragonBones::set_speed);
+    CLASS_BIND_GODO::bind_method(METH("get_speed"), &GDDragonBones::get_speed);
+
+    CLASS_BIND_GODO::bind_method(METH("set_animation_process_mode","mode"),&GDDragonBones::set_animation_process_mode);
+    CLASS_BIND_GODO::bind_method(METH("get_animation_process_mode"),&GDDragonBones::get_animation_process_mode);
 
     ADD_PROPERTYNZ(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), _SCS("set_texture"), _SCS("get_texture"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), _SCS("set_debug"), _SCS("is_debug"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flipX"), _SCS("flip_x"), _SCS("is_fliped_x"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flipY"), _SCS("flip_y"), _SCS("is_fliped_y"));
+
+#if (VERSION_MAJOR == 3)
+#else
     ADD_PROPERTY(PropertyInfo(Variant::COLOR, "modulate"), _SCS("set_modulate"), _SCS("get_modulate"));
+#endif
+
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, "GDDragonBonesResource"), _SCS("set_resource"), _SCS("get_resource"));
 
     ADD_PROPERTY(PropertyInfo(Variant::INT, "playback/process_mode", PROPERTY_HINT_ENUM, "Fixed,Idle"), _SCS("set_animation_process_mode"), _SCS("get_animation_process_mode"));
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback/speed", PROPERTY_HINT_RANGE, "0,10,0.01"), _SCS("set_speed"), _SCS("get_speed"));
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback/progress", PROPERTY_HINT_RANGE, "0,1,0.010"), _SCS("seek"), _SCS("tell"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "playback/play"), _SCS("play"), _SCS("is_playing"));
+
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use parent material"), _SCS("set_inherit_material"), _SCS("is_material_inherited"));
 
     ADD_SIGNAL(MethodInfo("dragon_anim_start", PropertyInfo(Variant::STRING, "anim")));
     ADD_SIGNAL(MethodInfo("dragon_anim_complete", PropertyInfo(Variant::STRING, "anim")));

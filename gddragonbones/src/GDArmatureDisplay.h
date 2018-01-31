@@ -8,7 +8,11 @@ DRAGONBONES_NAMESPACE_BEGIN
 
 class GDArmatureDisplay : public GDDisplay, virtual public IArmatureProxy
 {
-   OBJ_TYPE(GDArmatureDisplay, GDDisplay);
+#if (VERSION_MAJOR == 3)
+    GDCLASS(GDArmatureDisplay, GDDisplay);
+#else
+    OBJ_TYPE(GDArmatureDisplay, GDDisplay);
+#endif
 
    private:
        GDArmatureDisplay(const GDArmatureDisplay&);
@@ -43,7 +47,7 @@ public:
 	Animation* getAnimation() const override { return p_armature->getAnimation(); }
 
     void    add_parent_class(bool _b_debug, const Ref<Texture>& _m_texture_atla);
-    void    update_childs(bool _b_color, bool _b_blending = false);
+    void    update_childs(bool _b_color, bool _b_blending = false, bool _b_inherit_material = true);
     void    update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
 
     void    set_debug(bool _b_debug);

@@ -7,6 +7,7 @@ DRAGONBONES_NAMESPACE_BEGIN
 GDArmatureDisplay::GDArmatureDisplay()
 {
 	p_armature = nullptr;
+    set_use_parent_material(true);
 }
 
 GDArmatureDisplay::~GDArmatureDisplay()
@@ -61,7 +62,7 @@ void GDArmatureDisplay::add_parent_class(bool _b_debug, const Ref<Texture>& _m_t
     }
 }
 
-void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending)
+void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending, bool _b_inherit_material)
 {
     if(!p_armature)
         return;
@@ -73,6 +74,14 @@ void GDArmatureDisplay::update_childs(bool _b_color, bool _b_blending)
 
         if(_b_color)
             item->_colorDirty = true;
+
+        auto display = static_cast<GDDisplay*>(item->getRawDisplay());
+        if (display)
+        {
+             display->set_use_parent_material(_b_inherit_material);
+             display->update();
+             item->invalidUpdate();
+        }
 
         if(_b_blending)
             item->invalidUpdate();

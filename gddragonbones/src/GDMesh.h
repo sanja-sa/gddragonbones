@@ -5,7 +5,11 @@
 
 class GDMesh : public GDDisplay
 { 
-	OBJ_TYPE(GDMesh, GDDisplay);
+#if (VERSION_MAJOR == 3)
+    GDCLASS(GDMesh, GDDisplay);
+#else
+    OBJ_TYPE(GDMesh, GDDisplay);
+#endif
 
 private:
     GDMesh(const GDMesh&);

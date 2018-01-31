@@ -7,8 +7,13 @@
 
 DRAGONBONES_USING_NAME_SPACE;
 
-class GDDragonBones : public GDOwnerNode {
+class GDDragonBones : public GDOwnerNode
+{
+#if (VERSION_MAJOR == 3)
+    GDCLASS(GDDragonBones, GDOwnerNode);
+#else
     OBJ_TYPE(GDDragonBones, GDOwnerNode);
+#endif
 
 public:
     enum AnimMode {
@@ -27,8 +32,13 @@ public:
 
 
 	// Resource class
-	class GDDragonBonesResource : public Resource {
-		OBJ_TYPE(GDDragonBonesResource, Resource);
+    class GDDragonBonesResource : public Resource
+    {
+#if (VERSION_MAJOR == 3)
+    GDCLASS(GDDragonBonesResource, Resource);
+#else
+    OBJ_TYPE(GDDragonBonesResource, Resource);
+#endif
 	
 	public:		
 		GDDragonBonesResource();
@@ -60,6 +70,7 @@ private:
     bool                        b_try_playing;
     bool                        b_flip_x;
     bool                        b_flip_y;
+    bool                        b_inherit_child_material;
 
 protected:
     void _notification(int _what);
@@ -86,17 +97,23 @@ public:
 	void set_resource(Ref<GDDragonBonesResource> _p_data);
     Ref<GDDragonBonesResource> get_resource();
 
+    void set_inherit_material(bool _b_enable);
+    bool is_material_inherited() const;
+
+#if (VERSION_MAJOR == 3)
+#else
     void set_opacity(float _f_opacity);
     float get_opacity() const;
 
+    void set_blend_mode(CanvasItem::BlendMode _blend_mode);
+     CanvasItem::BlendMode get_blend_mode() const;
+
+     void set_modulate(const Color& _p_color);
+     Color get_modulate() const;
+#endif
+
     void fade_in(const String& _name_anim, float _time, int _loop, int _layer, const String& _group, GDDragonBones::AnimFadeOutMode _fade_out_mode);
     void fade_out(const String& _name_anim);
-
-    void set_modulate(const Color& _p_color);
-	Color get_modulate() const;	
-
-    void set_blend_mode(CanvasItem::BlendMode _blend_mode);
-    CanvasItem::BlendMode get_blend_mode() const;
 
     void set_active(bool _b_active);
     bool is_active() const;
