@@ -252,7 +252,8 @@ Ref<GDDragonBones::GDDragonBonesResource> GDDragonBones::get_resource()
 void GDDragonBones::set_inherit_material(bool _b_enable)
 {
     b_inherit_child_material = _b_enable;
-    p_armature->update_material_inheritance(b_inherit_child_material);
+    if(p_armature)
+	    p_armature->update_material_inheritance(b_inherit_child_material);
 }
 
 bool GDDragonBones::is_material_inherited() const
