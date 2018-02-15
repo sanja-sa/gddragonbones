@@ -61,6 +61,7 @@ private:
     GDArmatureDisplay*          p_armature;
     AnimMode                    m_anim_mode;
     float                       f_speed;
+    float                       f_progress;
     int                         c_loop;
     bool                        b_processing;
     bool                        b_active;
@@ -94,7 +95,7 @@ public:
     void dispatch_snd_event(const String& _str_type, const EventObject* _p_value);
 
     // setters/getters
-	void set_resource(Ref<GDDragonBonesResource> _p_data);
+    void set_resource(Ref<GDDragonBonesResource> _p_data);
     Ref<GDDragonBonesResource> get_resource();
 
     void set_inherit_material(bool _b_enable);
@@ -131,6 +132,7 @@ public:
 
     float tell() const;
     void seek(float _f_p);
+    float get_progress() const;
 
     void set_animation_process_mode(GDDragonBones::AnimMode _mode);
     AnimMode get_animation_process_mode() const;

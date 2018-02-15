@@ -92,6 +92,7 @@ GDDragonBones::GDDragonBones()
     str_curr_anim = "[none]";
     p_armature = nullptr;
     m_anim_mode = ANIMATION_PROCESS_IDLE;
+    f_progress = 0;
     f_speed = 1.f;
     b_processing = false;
     b_active = true;
@@ -568,9 +569,16 @@ void GDDragonBones::seek(float _f_p)
 {
     if(b_inited && has_anim(str_curr_anim))
     {
+	f_progress = _f_p;
         stop();
-        p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data(), CLAMP(_f_p, 0, 1.f));
+	auto __c_p = Math::fmod(_f_p, 1.f);
+        p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data(), __c_p < 0?1.+__c_p:__c_p);
     }
+}
+
+float GDDragonBones::get_progress() const
+{
+    return f_progress;
 }
 
 bool GDDragonBones::is_playing() const
@@ -685,7 +693,7 @@ bool GDDragonBones::_get(const StringName& _str_name, Variant &_r_ret) const
     else if (__name == "playback/loop")
         _r_ret = c_loop;
     else if (__name == "playback/progress")
-        _r_ret = tell();
+        _r_ret = get_progress();
     return true;
 }
 
@@ -734,6 +742,8 @@ void GDDragonBones::_bind_methods()
 
     CLASS_BIND_GODO::bind_method(METH("seek", "pos"), &GDDragonBones::seek);
     CLASS_BIND_GODO::bind_method(METH("tell"), &GDDragonBones::tell);
+    CLASS_BIND_GODO::bind_method(METH("get_progress"), &GDDragonBones::get_progress);
+
 
     CLASS_BIND_GODO::bind_method(METH("set_active", "active"), &GDDragonBones::set_active);
     CLASS_BIND_GODO::bind_method(METH("is_active"), &GDDragonBones::is_active);
@@ -766,7 +776,7 @@ void GDDragonBones::_bind_methods()
 
     ADD_PROPERTY(PropertyInfo(Variant::INT, "playback/process_mode", PROPERTY_HINT_ENUM, "Fixed,Idle"), _SCS("set_animation_process_mode"), _SCS("get_animation_process_mode"));
     ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback/speed", PROPERTY_HINT_RANGE, "0,10,0.01"), _SCS("set_speed"), _SCS("get_speed"));
-    ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback/progress", PROPERTY_HINT_RANGE, "0,1,0.010"), _SCS("seek"), _SCS("tell"));
+    ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback/progress", PROPERTY_HINT_RANGE, "-100,100,0.010"), _SCS("seek"), _SCS("get_progress"));
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "playback/play"), _SCS("play"), _SCS("is_playing"));
 
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "childs use this material"), _SCS("set_inherit_material"), _SCS("is_material_inherited"));
