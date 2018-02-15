@@ -571,7 +571,9 @@ void GDDragonBones::seek(float _f_p)
     {
 	f_progress = _f_p;
         stop();
-	auto __c_p = Math::fmod(_f_p, 1.f);
+	auto __c_p = Math::fmod(_f_p, 1.0f);
+	if (__c_p == 0 && _f_p != 0)
+		__c_p = 1.0f;
         p_armature->getAnimation()->gotoAndStopByProgress(str_curr_anim.ascii().get_data(), __c_p < 0?1.+__c_p:__c_p);
     }
 }
