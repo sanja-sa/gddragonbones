@@ -1,7 +1,7 @@
 #ifndef GDARMATUREDESPLAY_H
 #define GDARMATUREDESPLAY_H
 
-#include <dragonBones\DragonBonesHeaders.h>
+#include <dragonBones/DragonBonesHeaders.h>
 #include "GDDisplay.h"
 
 DRAGONBONES_NAMESPACE_BEGIN
