@@ -9,6 +9,13 @@ Plugin module for Godot Game Engine to use DragonBones
 * Godot 2.1 & Godot 3
 * DragonBones Pro 5.6
 
+#### Support Platforms
+* Windows
+* Android
+* iOS
+* x11
+* Linux
+
 #### Compiling
 1. Drop the "GDDragonBones" directory inside the "modules" directory on the Godot source.
 
@@ -21,7 +28,7 @@ for compilation instructions for every supported platform.
 android_stl=yes
 ```
 
-* For iOS not Tested at this moment, maybe some compilation trouble.
+* For iOS no additional flags.
 
 * [Godot Engine Src](https://github.com/godotengine/godot)
 * [DragonBones common library](https://github.com/DragonBones/DragonBonesCPP)

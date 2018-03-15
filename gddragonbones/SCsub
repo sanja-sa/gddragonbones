@@ -17,7 +17,7 @@ env_modules.Append(CPPFLAGS=["-I", "modules/gddragonbones/src",
 	"-I",  "modules/gddragonbones/src/dragonBones",
 ])
 
-if (env['platform'] == 'android'):
+if (env['platform'] != 'windows'):
 	env_modules.Append(CXXFLAGS=['-std=c++11'])
 
 Export('env_modules')
