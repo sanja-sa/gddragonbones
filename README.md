@@ -13,8 +13,7 @@ Plugin module for Godot Game Engine to use DragonBones
 * Windows
 * Android
 * iOS
-* x11
-* Linux
+* x11 (Linux)
 
 #### Compiling
 1. Drop the "GDDragonBones" directory inside the "modules" directory on the Godot source.
