@@ -44,6 +44,10 @@ public:
                 verticesPos,
                 verticesColor,
                 verticesUV,
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+		Vector<int>(),
+		Vector<float>(),
+#endif
                 texture.is_valid() ? texture->get_rid() : RID(),
                 -1
             );
