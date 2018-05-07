@@ -20,70 +20,33 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#ifndef DRAGONBONES_SKIN_DATA_H
-#define DRAGONBONES_SKIN_DATA_H
+#ifndef DRAGONBONES_DEFORMVERTICES_H
+#define DRAGONBONES_DEFORMVERTICES_H
 
 #include "../core/BaseObject.h"
 
 DRAGONBONES_NAMESPACE_BEGIN
+
 /**
- * - The skin data, typically a armature data instance contains at least one skinData.
- * @version DragonBones 3.0
- * @language en_US
+ * @internal
  */
-/**
- * - 皮肤数据，通常一个骨架数据至少包含一个皮肤数据。
- * @version DragonBones 3.0
- * @language zh_CN
- */
-class SkinData : public BaseObject
+class DeformVertices : public BaseObject
 {
-    BIND_CLASS_TYPE_A(SkinData);
+    BIND_CLASS_TYPE_A(DeformVertices);
 
 public:
-    /**
-     * - The skin name.
-     * @version DragonBones 3.0
-     * @language en_US
-     */
-    /**
-     * - 皮肤名称。
-     * @version DragonBones 3.0
-     * @language zh_CN
-     */
-    std::string name;
-    /**
-     * @private
-     */
-    std::map<std::string, std::vector<DisplayData*>> displays;
-    /**
-     * @private
-     */
-    ArmatureData* parent;
+    bool verticesDirty;
+    std::vector<float> vertices;
+    std::vector<Bone*> bones;
+    const VerticesData* verticesData;
 
 protected:
     virtual void _onClear() override;
 
 public:
-    /**
-     * @internal
-     */
-    void addDisplay(const std::string& slotName, DisplayData* value);
-    /**
-     * @private
-     */
-    DisplayData* getDisplay(const std::string& slotName, const std::string& displayName);
-    /**
-     * @private
-     */
-    std::vector<DisplayData*>* getDisplays(const std::string& slotName)
-    {
-        return mapFindB(displays, slotName);
-    }
-
-public: // For WebAssembly. TODO parent
-    const std::map<std::string, std::vector<DisplayData*>>& getSlotDisplays() const { return displays; }
+    void init(const VerticesData* weightData, Armature* armature);
+    bool isBonesUpdate() const;
 };
 
 DRAGONBONES_NAMESPACE_END
-#endif // DRAGONBONES_SKIN_DATA_H
+#endif // DRAGONBONES_DEFORMVERTICES_H

@@ -89,12 +89,12 @@ Armature* GDFactory::_buildArmature(const BuildArmaturePackage& dataPackage) con
 	return armature;
 }
 
-Slot* GDFactory::_buildSlot(const BuildArmaturePackage& dataPackage, SlotData* slotData, std::vector<DisplayData*>* displays, Armature* armature) const
+Slot* GDFactory::_buildSlot(const BuildArmaturePackage& dataPackage, const SlotData* slotData, Armature* armature) const
 {
 	auto slot = BaseObject::borrowObject<GDSlot>();
     auto wrapperDisplay = GDMesh::create();
 	_wrapperSlots.push_back(std::unique_ptr<GDSlot>(slot));
-	slot->init(slotData, displays, wrapperDisplay, wrapperDisplay);
+	slot->init(slotData, armature, wrapperDisplay, wrapperDisplay);
     wrapperDisplay->set_name(slot->getName().c_str());
 	return slot;
 }

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -142,6 +142,11 @@ public:
      */
     static const char* SOUND_EVENT;
 
+    /**
+     * @internal
+     */
+    static void actionDataToInstance(const ActionData* data, EventObject* instance, Armature* armature);
+
 public:
     /**
      * - If is a frame event, the value is used to describe the time that the event was in the animation timeline. (In seconds)
@@ -229,25 +234,26 @@ public:
      */
     AnimationState* animationState;
     /**
+     * @private
+     */
+    const ActionData* actionData;
+    /**
      * - The custom data.
      * @see dragonBones.CustomData
+     * @private
      * @version DragonBones 5.0
      * @language en_US
      */
     /**
      * - 自定义数据。
      * @see dragonBones.CustomData
+     * @private
      * @version DragonBones 5.0
      * @language zh_CN
      */
     UserData* data;
 
-    void copyFrom(const EventObject& value);
-
 protected:
-    /**
-     * @private
-     */
     virtual void _onClear() override;
 
 public: // For WebAssembly.

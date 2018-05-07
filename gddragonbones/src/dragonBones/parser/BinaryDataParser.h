@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -29,7 +29,6 @@ DRAGONBONES_NAMESPACE_BEGIN
 
 /**
  * @internal
- * @private
  */
 class BinaryDataParser : public JSONDataParser
 {
@@ -46,6 +45,7 @@ private:
     const uint16_t* _timelineArray;
 
     TimelineData* _parseBinaryTimeline(TimelineType type, unsigned offset, TimelineData* timelineData = nullptr);
+    void _parseVertices(const rapidjson::Value& rawData, VerticesData& vertices);
 
 protected:
     virtual void _parseMesh(const rapidjson::Value& rawData, MeshDisplayData& mesh) override;

@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -67,75 +67,57 @@ public:
     OffsetMode offsetMode;
     /**
      * @internal
-     * @private
      */
     Transform animationPose;
     /**
      * @internal
-     * @private
      */
     bool _transformDirty;
     /**
      * @internal
-     * @private
      */
     bool _childrenTransformDirty;
     /**
      * @internal
-     * @private
      */
     bool _hasConstraint;
     /**
-    * @internal
-    * @private
-    */
+     * @internal
+     */
     BlendState _blendState;
     /**
      * @internal
-     * @private
      */
-    BoneData* _boneData;
+    const BoneData* _boneData;
     /**
      * @internal
-     * @private
      */
     std::vector<int>* _cachedFrameIndices;
 
-private:
+protected:
     bool _localDirty;
     bool _visible;
     int _cachedFrameIndex;
     /**
      * @private
      */
-    void _updateGlobalTransformMatrix(bool isCache);
+    Bone* _parent;
 
 protected:
-    /**
-     * @inheritDoc
-     */
     void _onClear() override;
-
-public:
-    /**
-     * @inheritDoc
-     */
-    virtual void _setArmature(Armature* value) override;
+    void _updateGlobalTransformMatrix(bool isCache);
 
 public:
     /**
      * @internal
-     * @private
      */
-    void init(BoneData* boneData);
+    void init(const BoneData* boneData, Armature* armatureValue);
     /**
      * @internal
-     * @private
      */
     void update(int cacheFrameIndex);
     /**
      * @internal
-     * @private
      */
     void updateByConstraint();
     /**
@@ -170,20 +152,18 @@ public:
         _transformDirty = true;
     }
     /**
-     * - Check whether the bone contains a specific bone or slot.
+     * - Check whether the bone contains a specific bone.
      * @see dragonBones.Bone
-     * @see dragonBones.Slot
      * @version DragonBones 3.0
      * @language en_US
      */
     /**
-     * - 检查该骨骼是否包含特定的骨骼或插槽。
+     * - 检查该骨骼是否包含特定的骨骼。
      * @see dragonBones.Bone
-     * @see dragonBones.Slot
      * @version DragonBones 3.0
      * @language zh_CN
      */
-    bool contains(const TransformObject* value) const;
+    bool contains(const Bone* value) const;
     /**
      * - The bone data.
      * @version DragonBones 4.5
@@ -231,29 +211,20 @@ public:
     {
         return _boneData->name;
     }
-
     /**
-     * - Deprecated, please refer to {@link dragonBones.Armature#getBones()}.
-     * @deprecated
+     * - The parent bone to which it belongs.
+     * @version DragonBones 3.0
      * @language en_US
      */
     /**
-     * - 已废弃，请参考 {@link dragonBones.Armature#getBones()}。
-     * @deprecated
+     * - 所属的父骨骼。
+     * @version DragonBones 3.0
      * @language zh_CN
      */
-    const std::vector<Bone*> getBones() const;
-    /**
-     * - Deprecated, please refer to {@link dragonBones.Armature#getSlots()}.
-     * @deprecated
-     * @language en_US
-     */
-    /**
-     * - 已废弃，请参考 {@link dragonBones.Armature#getSlots()}。
-     * @deprecated
-     * @language zh_CN
-     */
-    const std::vector<Slot*> getSlots() const;
+    inline Bone* getParent() const
+    {
+        return _parent;
+    }
 
 public: // For WebAssembly.
     inline int getOffsetMode() const { return (int)offsetMode; }

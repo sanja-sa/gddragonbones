@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -281,9 +281,6 @@ public:
     std::vector<std::string> boneMask;
 
 protected:
-    /**
-     * @private
-     */
     virtual void _onClear() override;
 
 public:
@@ -298,15 +295,15 @@ public:
     /**
      * @private
      */
-    bool containsBoneMask(const std::string& name) const;
+    bool containsBoneMask(const std::string& boneName) const;
     /**
      * @private
      */
-    void addBoneMask(Armature* armature, const std::string& name, bool recursive);
+    void addBoneMask(Armature* armature, const std::string& boneName, bool recursive);
     /**
      * @private
      */
-    void removeBoneMask(Armature* armature, const std::string& name, bool recursive);
+    void removeBoneMask(Armature* armature, const std::string& boneName, bool recursive);
 
 public: // For WebAssembly.
     int getFadeOutMode() const { return (int)fadeOutMode; }

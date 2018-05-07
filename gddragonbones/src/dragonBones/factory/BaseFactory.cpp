@@ -119,16 +119,7 @@ void BaseFactory::_buildBones(const BuildArmaturePackage& dataPackage, Armature*
     for (const auto boneData : dataPackage.armature->sortedBones)
     {
         const auto bone = BaseObject::borrowObject<Bone>();
-        bone->init(boneData);
-
-        if (boneData->parent != nullptr)
-        {
-            armature->addBone(bone, boneData->parent->name);
-        }
-        else
-        {
-            armature->addBone(bone, "");
-        }
+        bone->init(boneData, armature);
     }
 
     for (const auto& pair : dataPackage.armature->constraints)
@@ -136,7 +127,7 @@ void BaseFactory::_buildBones(const BuildArmaturePackage& dataPackage, Armature*
         // TODO more constraint type.
         const auto constraint = BaseObject::borrowObject<IKConstraint>();
         constraint->init(pair.second, armature);
-        armature->addConstraint(constraint);
+        armature->_addConstraint(constraint);
     }
 }
 
@@ -167,15 +158,15 @@ void BaseFactory::_buildSlots(const BuildArmaturePackage& dataPackage, Armature*
 
     for (const auto slotData : dataPackage.armature->sortedSlots) 
     {
-        const auto displays = skinSlots[slotData->name];
-        const auto slot = _buildSlot(dataPackage, slotData, displays, armature);
-        armature->addSlot(slot, slotData->parent->name);
+        const auto displayDatas = skinSlots[slotData->name];
+        const auto slot = _buildSlot(dataPackage, slotData, armature);
+        slot->setRawDisplayDatas(displayDatas);
 
-        if (displays != nullptr)
+        if (displayDatas != nullptr)
         {
             std::vector<std::pair<void*, DisplayType>> displayList;
 
-            for (const auto displayData : *displays)
+            for (const auto displayData : *displayDatas)
             {
                 if (displayData != nullptr)
                 {
@@ -201,7 +192,29 @@ Armature* BaseFactory::_buildChildArmature(const BuildArmaturePackage* dataPacka
 
 std::pair<void*, DisplayType> BaseFactory::_getSlotDisplay(const BuildArmaturePackage* dataPackage, DisplayData* displayData, DisplayData* rawDisplayData, Slot* slot) const
 {
-    const auto& dataName = dataPackage != nullptr ? dataPackage->dataName : displayData->parent->parent->parent->name;
+    std::string dataName = "";
+
+    if (dataPackage != nullptr)
+    {
+        dataName = dataPackage->dataName;
+    }
+    else 
+    {
+        for (const auto& pair : _dragonBonesDataMap) 
+        {
+            if (pair.second == displayData->parent->parent->parent)
+            {
+                dataName = pair.first;
+            }
+        }
+
+        if (dataName.empty())
+        {
+            dataName = displayData->parent->parent->parent->name;
+        }
+    }
+        dataPackage != nullptr ? dataPackage->dataName : displayData->parent->parent->parent->name;
+
     std::pair<void*, DisplayType> display(nullptr, DisplayType::Image);
     switch (displayData->type)
     {

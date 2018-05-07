@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -44,19 +44,16 @@ public:
     /**
      * - FrameIntArray.
      * @internal
-     * @private
      */
     unsigned frameIntOffset;
     /**
      * - FrameFloatArray.
      * @internal
-     * @private
      */
     unsigned frameFloatOffset;
     /**
      * - FrameArray.
      * @internal
-     * @private
      */
     unsigned frameOffset;
     /**
@@ -170,15 +167,11 @@ public:
     }
 
 protected:
-    /**
-     * @inheritDoc
-     */
     virtual void _onClear() override;
 
 public:
     /**
      * @internal
-     * @private
      */
     void cacheFrames(unsigned frameRate);
     /**
@@ -196,44 +189,44 @@ public:
     /**
      * @private
      */
-    std::vector<TimelineData*>* getBoneTimelines(const std::string& name)
+    std::vector<TimelineData*>* getBoneTimelines(const std::string& timelineName)
     {
-        return mapFindB(boneTimelines, name);
+        return mapFindB(boneTimelines, timelineName);
     }
     /**
      * @private
      */
-    inline std::vector<TimelineData*>* getSlotTimelines(const std::string& name)
+    inline std::vector<TimelineData*>* getSlotTimelines(const std::string& timelineName)
     {
-        return mapFindB(slotTimelines, name);
+        return mapFindB(slotTimelines, timelineName);
     }
     /**
      * @private
      */
-    inline std::vector<TimelineData*>* getConstraintTimelines(const std::string& name)
+    inline std::vector<TimelineData*>* getConstraintTimelines(const std::string& timelineName)
     {
-        return mapFindB(constraintTimelines, name);
+        return mapFindB(constraintTimelines, timelineName);
     }
     /**
      * @private
      */
-    inline std::vector<int>* getBoneCachedFrameIndices(const std::string& name)
+    inline std::vector<int>* getBoneCachedFrameIndices(const std::string& boneName)
     {
-        return mapFindB(boneCachedFrameIndices, name);
+        return mapFindB(boneCachedFrameIndices, boneName);
     }
     /**
      * @private
      */
-    inline std::vector<int>* getSlotCachedFrameIndices(const std::string& name)
+    inline std::vector<int>* getSlotCachedFrameIndices(const std::string& slotName)
     {
-        return mapFindB(slotCachedFrameIndices, name);
+        return mapFindB(slotCachedFrameIndices, slotName);
     }
 
 public: // For WebAssembly.
-    TimelineData* getActionTimeline(const std::string& name) const { return actionTimeline; }
+    TimelineData* getActionTimeline() const { return actionTimeline; }
     void setActionTimeline(TimelineData* pactionTimeline) { actionTimeline = pactionTimeline; }
 
-    TimelineData* getZOrderTimeline(const std::string& name) const { return zOrderTimeline; }
+    TimelineData* getZOrderTimeline() const { return zOrderTimeline; }
     void setZOrderTimeline(TimelineData* value) { zOrderTimeline = value; }
 
     ArmatureData* getParent() const { return parent; }
@@ -241,7 +234,6 @@ public: // For WebAssembly.
 };
 /**
  * @internal
- * @private
  */
 class TimelineData : public BaseObject
 {

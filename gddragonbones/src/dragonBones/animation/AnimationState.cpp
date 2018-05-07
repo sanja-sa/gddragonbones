@@ -289,13 +289,13 @@ void AnimationState::_updateBoneAndSlotTimelines()
                                 break;
                             }
 
-                            case TimelineType::SlotFFD:
+                            case TimelineType::SlotDeform:
                             {
-                                const auto timeline = BaseObject::borrowObject<SlotFFDTimelineState>();
+                                const auto timeline = BaseObject::borrowObject<DeformTimelineState>();
                                 timeline->slot = slot;
                                 timeline->init(_armature, this, timelineData);
                                 _slotTimelines.push_back(timeline);
-                                ffdFlags.push_back(timeline->meshOffset);
+                                ffdFlags.push_back(timeline->vertexOffset);
                                 break;
                             }
 
@@ -331,11 +331,11 @@ void AnimationState::_updateBoneAndSlotTimelines()
                         {
                             if (displayData != nullptr && displayData->type == DisplayType::Mesh)
                             {
-                                const auto meshOffset = static_cast<MeshDisplayData*>(displayData)->offset;
+                                const auto meshOffset = static_cast<MeshDisplayData*>(displayData)->vertices.offset;
                                 if (std::find(ffdFlags.cbegin(), ffdFlags.cend(), meshOffset) == ffdFlags.cend())
                                 {
-                                    const auto timeline = BaseObject::borrowObject<SlotFFDTimelineState>();
-                                    timeline->meshOffset = meshOffset;
+                                    const auto timeline = BaseObject::borrowObject<DeformTimelineState>();
+                                    timeline->vertexOffset = meshOffset;
                                     timeline->slot = slot;
                                     timeline->init(_armature, this, nullptr);
                                     _slotTimelines.push_back(timeline);
@@ -741,22 +741,22 @@ void AnimationState::fadeOut(float fadeOutTime, bool pausePlayhead)
     _fadeTime = fadeTotalTime * (1.0f - _fadeProgress);
 }
 
-bool AnimationState::containsBoneMask(const std::string& name) const
+bool AnimationState::containsBoneMask(const std::string& boneName) const
 {
-    return _boneMask.empty() || std::find(_boneMask.cbegin(), _boneMask.cend(), name) != _boneMask.cend();
+    return _boneMask.empty() || std::find(_boneMask.cbegin(), _boneMask.cend(), boneName) != _boneMask.cend();
 }
 
-void AnimationState::addBoneMask(const std::string& name, bool recursive)
+void AnimationState::addBoneMask(const std::string& boneName, bool recursive)
 {
-    const auto currentBone = _armature->getBone(name);
+    const auto currentBone = _armature->getBone(boneName);
     if (currentBone == nullptr)
     {
         return;
     }
 
-    if (std::find(_boneMask.cbegin(), _boneMask.cend(), name) == _boneMask.cend())
+    if (std::find(_boneMask.cbegin(), _boneMask.cend(), boneName) == _boneMask.cend())
     {
-        _boneMask.push_back(name);
+        _boneMask.push_back(boneName);
     }
 
     if (recursive) // Add recursive mixing.
@@ -773,17 +773,19 @@ void AnimationState::addBoneMask(const std::string& name, bool recursive)
     _timelineDirty = 1;
 }
 
-void AnimationState::removeBoneMask(const std::string& name, bool recursive)
+void AnimationState::removeBoneMask(const std::string& boneName, bool recursive)
 {
-    auto iterator = std::find(_boneMask.begin(), _boneMask.end(), name);
-    if (iterator != _boneMask.cend()) // Remove mixing.
     {
-        _boneMask.erase(iterator);
+        auto iterator = std::find(_boneMask.begin(), _boneMask.end(), boneName);
+        if (iterator != _boneMask.cend()) // Remove mixing.
+        {
+            _boneMask.erase(iterator);
+        }
     }
 
     if (recursive)
     {
-        const auto currentBone = _armature->getBone(name);
+        const auto currentBone = _armature->getBone(boneName);
         if (currentBone != nullptr)
         {
             const auto& bones = _armature->getBones();
@@ -857,7 +859,7 @@ void AnimationState::setCurrentTime(float value)
         }
     }
 
-    if (playTimes > 0 && currentPlayTimes == playTimes - 1 && value == _duration) 
+    if (playTimes > 0 && (unsigned)currentPlayTimes == playTimes - 1 && value == _duration) 
     {
         value = _duration - 0.000001f;
     }

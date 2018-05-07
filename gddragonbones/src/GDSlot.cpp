@@ -148,9 +148,9 @@ void GDSlot::__get_uv_pt(Point2& _pt, bool _is_rot, float _u, float _v, const Re
 
 void GDSlot::_updateFrame()
 {
-        const auto meshData = _display == _meshDisplay ? _meshData : nullptr;
+        const auto currentVerticesData  = (_deformVertices != nullptr && _display == _meshDisplay) ? _deformVertices->verticesData : nullptr;
         auto currentTextureData = static_cast<GDTextureData*>(_textureData);
-        const auto hasFFD = !_deformVertices.empty()?-1.0:1.0;
+
 
         if (_displayIndex >= 0 && _display != nullptr && currentTextureData != nullptr)
         {
@@ -158,14 +158,17 @@ void GDSlot::_updateFrame()
             const auto& region = currentTextureData->region;
             auto frameDisplay = static_cast<GDMesh*>(_renderDisplay);
 
-                if (meshData != nullptr) // Mesh.
+                if (currentVerticesData  != nullptr) // Mesh.
                 {
-                    const auto data = meshData->parent->parent->parent;
-                    const auto intArray = data->intArray;
+                    const auto& deformVertices = _deformVertices->vertices;
+                    const auto hasFFD = !deformVertices.empty();
+
+                    const auto data = currentVerticesData->data;
+                    const auto intArray = data->intArray;                     
                     const auto floatArray = data->floatArray;
-                    const unsigned vertexCount = intArray[meshData->offset + (unsigned)BinaryOffset::MeshVertexCount];
-                    const unsigned triangleCount = intArray[meshData->offset + (unsigned)BinaryOffset::MeshTriangleCount];
-                    int vertexOffset = intArray[meshData->offset + (unsigned)BinaryOffset::MeshFloatOffset];
+                    const unsigned vertexCount = intArray[currentVerticesData->offset + (unsigned)BinaryOffset::MeshVertexCount];
+                    const unsigned triangleCount = intArray[currentVerticesData->offset + (unsigned)BinaryOffset::MeshTriangleCount];
+                    int vertexOffset = intArray[currentVerticesData ->offset + (unsigned)BinaryOffset::MeshFloatOffset];
 
                     if (vertexOffset < 0)
                     {
@@ -195,7 +198,7 @@ void GDSlot::_updateFrame()
                     // setup indicies
                     for (std::size_t i = 0; i < triangleCount * 3; ++i)
                     {
-                        frameDisplay->indices[i] = intArray[meshData->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];
+                        frameDisplay->indices[i] = intArray[currentVerticesData ->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];
                     }
 
                     _textureScale = 1.0f;
@@ -224,10 +227,10 @@ void GDSlot::_updateFrame()
                     frameDisplay->verticesColor[2] = Color(1,1,1,1);
                     frameDisplay->verticesColor[3] = Color(1,1,1,1);
 
-                    frameDisplay->verticesPos[3] = Vector2(-width, hasFFD * -height);
-                    frameDisplay->verticesPos[2] = Vector2(width, hasFFD * -height);
-                    frameDisplay->verticesPos[1] = Vector2(width, hasFFD * height);
-                    frameDisplay->verticesPos[0] = Vector2(-width, hasFFD * height);
+                    frameDisplay->verticesPos[3] = Vector2(-width, -height);
+                    frameDisplay->verticesPos[2] = Vector2(width, -height);
+                    frameDisplay->verticesPos[1] = Vector2(width, height);
+                    frameDisplay->verticesPos[0] = Vector2(-width, height);
 
                     __get_uv_pt(frameDisplay->verticesUV[0], currentTextureData->rotated, 0, 0, region, atlas);
                     __get_uv_pt(frameDisplay->verticesUV[1], currentTextureData->rotated, 1.f, 0, region, atlas);
@@ -251,11 +254,13 @@ void GDSlot::_updateFrame()
 
 void GDSlot::_updateMesh()
 {
-    const auto hasFFD = !_deformVertices.empty();
-	const auto scale = _armature->_armatureData->scale;
-	const auto textureData = static_cast<GDTextureData*>(_textureData);
-	const auto meshData = _meshData;
-	const auto weightData = meshData->weight;
+    const auto scale = _armature->_armatureData->scale;
+    const auto textureData = static_cast<GDTextureData*>(_textureData);
+    const auto& deformVertices = _deformVertices->vertices;
+    const auto hasFFD = !deformVertices.empty();
+    const auto& bones = _deformVertices->bones;
+    const auto verticesData = _deformVertices->verticesData;
+    const auto weightData = verticesData->weight;
     const auto meshDisplay = static_cast<GDMesh*>(_renderDisplay);
 
     if (!textureData)
@@ -271,10 +276,10 @@ void GDSlot::_updateMesh()
 
 	if (weightData != nullptr)
 	{
-		const auto data = meshData->parent->parent->parent;
+		const auto data = verticesData->data;
 		const auto intArray = data->intArray;
 		const auto floatArray = data->floatArray;
-		const auto vertexCount = (std::size_t)intArray[meshData->offset + (unsigned)BinaryOffset::MeshVertexCount];
+		const auto vertexCount = (std::size_t)intArray[verticesData->offset + (unsigned)BinaryOffset::MeshVertexCount];
 		int weightFloatOffset = intArray[weightData->offset + (unsigned)BinaryOffset::WeigthFloatOffset];
 
 		if (weightFloatOffset < 0)
@@ -293,7 +298,7 @@ void GDSlot::_updateMesh()
 			for (std::size_t j = 0; j < boneCount; ++j)
 			{
 				const auto boneIndex = (unsigned)intArray[iB++];
-				const auto bone = _meshBones[boneIndex];
+				const auto bone = bones[boneIndex];
 				if (bone != nullptr)
 				{
 					const auto& matrix = bone->globalTransformMatrix;
@@ -303,8 +308,8 @@ void GDSlot::_updateMesh()
 
 					if (hasFFD)
 					{
-                        xL += _deformVertices[iF++];
-                        yL += _deformVertices[iF++];
+                        xL += deformVertices[iF++];
+                        yL += deformVertices[iF++];
 					}
 
 					xG += (matrix.a * xL + matrix.c * yL + matrix.tx) * weight;
@@ -316,11 +321,11 @@ void GDSlot::_updateMesh()
 	}
 	else if (hasFFD)
 	{        
-		const auto data = meshData->parent->parent->parent;
+		const auto data = verticesData->data;
 		const auto intArray = data->intArray;
 		const auto floatArray = data->floatArray;
-		const auto vertexCount = (std::size_t)intArray[meshData->offset + (unsigned)BinaryOffset::MeshVertexCount];
-		int vertexOffset = (std::size_t)intArray[meshData->offset + (unsigned)BinaryOffset::MeshFloatOffset];
+		const auto vertexCount = (std::size_t)intArray[verticesData->offset + (unsigned)BinaryOffset::MeshVertexCount];
+		int vertexOffset = (std::size_t)intArray[verticesData->offset + (unsigned)BinaryOffset::MeshFloatOffset];
 
 		if (vertexOffset < 0)
 		{
@@ -328,9 +333,9 @@ void GDSlot::_updateMesh()
 		}
         for (std::size_t i = 0, l = (vertexCount << 1); i < l; i += 2)
 		{
-			const auto iH = i / 2;
-            const auto xG = floatArray[vertexOffset + i] * scale + _deformVertices[i];
-            const auto yG = floatArray[vertexOffset + i + 1] * scale + _deformVertices[i + 1];
+			const auto iH = (i >> 1);
+            const auto xG = floatArray[vertexOffset + i] * scale + deformVertices[i];
+            const auto yG = floatArray[vertexOffset + i + 1] * scale + deformVertices[i + 1];
             meshDisplay->verticesPos[iH] = Vector2(xG, -yG);
 		}
 	}

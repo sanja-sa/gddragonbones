@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -105,7 +105,6 @@ DRAGONBONES_NAMESPACE_BEGIN
 
 /**
  * @internal
- * @private
  */
 enum class BinaryOffset
 {
@@ -131,7 +130,7 @@ enum class BinaryOffset
     FrameTweenEasingOrCurveSampleCount = 2,
     FrameCurveSamples = 3,
 
-    DeformMeshOffset = 0,
+    DeformVertexOffset = 0,
     DeformCount = 1,
     DeformValueCount = 2,
     DeformValueOffset = 3,
@@ -140,7 +139,6 @@ enum class BinaryOffset
 
 /**
  * @internal
- * @private
  */
 enum class ArmatureType
 {
@@ -173,7 +171,8 @@ enum class DisplayType
     Image = 0, 
     Armature = 1, 
     Mesh = 2,
-    BoundingBox = 3
+    BoundingBox = 3,
+    Path = 4
 };
 
 /**
@@ -195,7 +194,6 @@ enum class BoundingBoxType
 
 /**
  * @internal
- * @private
  */
 enum class ActionType {
     Play = 0,
@@ -205,7 +203,6 @@ enum class ActionType {
 
 /**
  * @internal
- * @private
  */
 enum class BlendMode 
 {
@@ -227,7 +224,6 @@ enum class BlendMode
 
 /**
  * @internal
- * @private
  */
 enum class TweenType {
     None = 0,
@@ -240,7 +236,6 @@ enum class TweenType {
 
 /**
  * @internal
- * @private
  */
 enum class TimelineType {
     Action = 0,
@@ -254,7 +249,7 @@ enum class TimelineType {
 
     SlotDisplay = 20,
     SlotColor = 21,
-    SlotFFD = 22,
+    SlotDeform = 22,
 
     IKConstraint = 30,
 
@@ -398,12 +393,13 @@ class DisplayData;
 class ImageDisplayData;
 class ArmatureDisplayData;
 class MeshDisplayData;
+class VerticesData;
+class WeightData;
 class BoundingBoxDisplayData;
 class BoundingBoxData;
 class RectangleBoundingBoxData;
 class EllipseBoundingBoxData;
 class PolygonBoundingBoxData;
-class WeightData;
 class AnimationData;
 class TimelineData;
 class AnimationConfig;
@@ -417,6 +413,7 @@ class Bone;
 class Slot;
 class Constraint;
 class IKConstraint;
+class DeformVertices;
 
 class IAnimatable;
 class WorldClock;
@@ -434,7 +431,7 @@ class ZOrderTimelineState;
 class BoneAllTimelineState;
 class SlotDislayTimelineState;
 class SlotColorTimelineState;
-class SlotFFDTimelineState;
+class DeformTimelineState;
 class IKConstraintTimelineState;
 
 class IEventDispatcher;

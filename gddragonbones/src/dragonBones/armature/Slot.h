@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -26,7 +26,6 @@
 #include "TransformObject.h"
 
 #include "../geom/ColorTransform.h"
-#include "../geom/Rectangle.h"
 #include "../model/ArmatureData.h"
 
 DRAGONBONES_NAMESPACE_BEGIN
@@ -80,273 +79,131 @@ public:
 public:
     /**
      * @internal
-     * @private
      */
     bool _colorDirty;
-    /**
-     * @internal
-     * @private
-     */
-    bool _meshDirty;
-    /**
-     * @private
-     */
     BlendMode _blendMode;
     /**
      * @internal
-     * @private
      */
     int _zOrder;
     /**
      * @internal
-     * @private
      */
     float _pivotX;
     /**
      * @internal
-     * @private
      */
     float _pivotY;
 
     /**
      * @internal
-     * @private
      */
     ColorTransform _colorTransform;
     /**
      * @internal
-     * @private
      */
-    std::vector<float> _deformVertices;
-    /**
-     * @private
-     */
-    std::vector<DisplayData*> _displayDatas;
+    const SlotData* _slotData;
     /**
      * @internal
-     * @private
      */
-    SlotData* _slotData;
+    DisplayData* _displayData;
     /**
      * @internal
-     * @private
      */
-    MeshDisplayData* _meshData;
-    /**
-     * @private
-     */
+    DeformVertices* _deformVertices;
     void* _rawDisplay;
-    /**
-     * @private
-     */
     void* _meshDisplay;
     /**
      * @internal
-     * @private
      */
     std::vector<int>* _cachedFrameIndices;
 
 protected:
-    /**
-     * @private
-     */
     bool _displayDirty;
-    /**
-     * @private
-     */
     bool _zOrderDirty;
-    /**
-     * @private
-     */
     bool _visibleDirty;
-    /**
-     * @private
-     */
     bool _blendModeDirty;
-    /**
-     * @private
-     */
     bool _transformDirty;
-    /**
-     * @private
-     */
     bool _visible;
-    /**
-     * @private
-     */
     int _displayIndex;
-    /**
-     * @private
-     */
     int _animationDisplayIndex;
-    /**
-     * @private
-     */
     int _cachedFrameIndex;
-    /**
-     * @private
-     */
     Matrix _localMatrix;
-    /**
-     * @private
-     */
+    std::vector<DisplayData*> _displayDatas;
     std::vector<std::pair<void*, DisplayType>> _displayList;
-    /**
-     * @private
-     */
-    std::vector<Bone*> _meshBones;
-    /**
-     * @private
-     */
-    std::vector<DisplayData*>* _rawDisplayDatas;
-    /**
-     * @private
-     */
-    DisplayData* _displayData;
-    /**
-     * @private
-     */
-    TextureData* _textureData;
-    /**
-     * @private
-     */
+    const std::vector<DisplayData*>* _rawDisplayDatas;
     BoundingBoxData* _boundingBoxData;
-    /**
-     * @private
-     */
+    TextureData* _textureData;
     void* _display;
+    Armature* _childArmature;
     /**
      * @private
      */
-    Armature* _childArmature;
+    Bone* _parent;
 
 public:
     Slot() :
+        _deformVertices(nullptr),
         _rawDisplay(nullptr),
         _meshDisplay(nullptr)
     {}
     virtual ~Slot() {};
 
 protected:
-    /**
-     * @inheritDoc
-     */
     virtual void _onClear() override;
 
-    /**
-     * @private
-     */
     virtual void _initDisplay(void* value, bool isRetain) = 0;
-    /**
-     * @private
-     */
     virtual void _disposeDisplay(void* value, bool isRelease) = 0;
-    /**
-     * @private
-     */
     virtual void _onUpdateDisplay() = 0;
-    /**
-     * @private
-     */
     virtual void _addDisplay() = 0;
-    /**
-     * @private
-     */
     virtual void _replaceDisplay(void* value, bool isArmatureDisplay) = 0;
-    /**
-     * @private
-     */
     virtual void _removeDisplay() = 0;
-    /**
-     * @private
-     */
     virtual void _updateZOrder() = 0;
-    /**
-     * @private
-     */
     virtual void _updateFrame() = 0;
-    /**
-     * @private
-     */
     virtual void _updateMesh() = 0;
-    /**
-     * @private
-     */
     virtual void _updateTransform() = 0;
-    /**
-    * @private
-    */
     virtual void _identityTransform() = 0;
     /**
-     * @private
+     * - Support default skin data.
      */
-    bool _isMeshBonesUpdate() const;
-    /**
-    * @private
-    */
     DisplayData* _getDefaultRawDisplayData(unsigned displayIndex) const;
-    /**
-     * @private
-     */
     void _updateDisplay();
-    /**
-     * @private
-     */
     void _updateDisplayData();
-    /**
-     * @private
-     */
     void _updateGlobalTransformMatrix(bool isCache);
 
 public:
     /**
-     * @private
+     * @internal
      */
     virtual void _updateVisible() = 0;
-    /**
-     * @private
-     */
     virtual void _updateBlendMode() = 0;
-    /**
-     * @private
-     */
     virtual void _updateColor() = 0;
 
 public:
     /**
-     * @inheritDoc
-     */
-    virtual void _setArmature(Armature* value) override;
-    /**
      * @internal
-     * @private
      */
     bool _setDisplayIndex(int value, bool isAnimation = false);
     /**
      * @internal
-     * @private
      */
     bool _setZorder(int value);
     /**
      * @internal
-     * @private
      */
     bool _setColor(const ColorTransform& value);
     /**
      * @internal
-     * @private
      */
     bool _setDisplayList(const std::vector<std::pair<void*, DisplayType>>& value);
 
 public:
     /**
      * @internal
-     * @private
      */
-    void init(SlotData* slotData, std::vector<DisplayData*>* displayDatas, void* rawDisplay, void* meshDisplay);
+    void init(const SlotData* slotData, Armature* armatureValue, void* rawDisplay, void* meshDisplay);
     /**
      * @internal
-     * @private
      */
     void update(int cacheFrameIndex);
     /**
@@ -508,11 +365,11 @@ public:
     /**
      * @private
      */
-    inline std::vector<DisplayData*>* getRawDisplayDatas() const 
+    inline const std::vector<DisplayData*>* getRawDisplayDatas() const 
     {
         return _rawDisplayDatas;
     }
-    void setRawDisplayDatas(std::vector<DisplayData*>* value);
+    void setRawDisplayDatas(const std::vector<DisplayData*>* value);
     /**
      * - The slot data.
      * @see dragonBones.SlotData
@@ -600,6 +457,10 @@ public:
      * TypeScript style, for reference only.
      * <pre>
      *     let slot = armature.getSlot("weapon");
+     * let prevChildArmature = slot.childArmature;
+     * if (prevChildArmature) {
+     * prevChildArmature.dispose();
+     *     }
      *     slot.childArmature = factory.buildArmature("weapon_blabla", "weapon_blabla_project");
      * </pre>
      * @version DragonBones 3.0
@@ -607,10 +468,15 @@ public:
      */
     /**
      * - 插槽此时显示的子骨架。
+     * 注意，被替换的对象或子骨架并不会被回收，根据语言和引擎的不同，需要额外处理。
      * @example
      * TypeScript 风格，仅供参考。
      * <pre>
      *     let slot = armature.getSlot("weapon");
+     * let prevChildArmature = slot.childArmature;
+     * if (prevChildArmature) {
+     * prevChildArmature.dispose();
+     *     }
      *     slot.childArmature = factory.buildArmature("weapon_blabla", "weapon_blabla_project");
      * </pre>
      * @version DragonBones 3.0
@@ -621,6 +487,20 @@ public:
         return _childArmature;
     }
     void setChildArmature(Armature* value);
+    /**
+     * - The parent bone to which it belongs.
+     * @version DragonBones 3.0
+     * @language en_US
+     */
+    /**
+     * - 所属的父骨骼。
+     * @version DragonBones 3.0
+     * @language zh_CN
+     */
+    inline Bone* getParent() const
+    {
+        return _parent;
+    }
 };
 
 DRAGONBONES_NAMESPACE_END

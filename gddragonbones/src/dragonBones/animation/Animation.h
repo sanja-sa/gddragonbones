@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -84,20 +84,15 @@ private:
     void _fadeOut(AnimationConfig* animationConfig);
 
 protected:
-    /**
-     * @private
-     */
     virtual void _onClear() override;
 
 public:
     /**
      * @internal
-     * @private
      */
     void init(Armature* armature);
     /**
      * @internal
-     * @private
      */
     void advanceTime(float passedTime);
     /**
@@ -176,7 +171,6 @@ public:
      * @language zh_CN
      */
     AnimationState* play(const std::string& animationName = "", int playTimes = -1);
-#ifdef EGRET_WASM
     /**
      * - Fade in a specific animation.
      * @param animationName - The name of animation data.
@@ -215,14 +209,8 @@ public:
      */
     AnimationState* fadeIn(
         const std::string& animationName, float fadeInTime = -1.f, int playTimes = -1,
-        int layer = 0, const std::string& group = "", int fadeOutMode = 3/*AnimationFadeOutMode fadeOutMode = AnimationFadeOutMode::SameLayerAndGroup*/
-    );
-#else
-    AnimationState* fadeIn(
-        const std::string& animationName, float fadeInTime = -1.f, int playTimes = -1,
         int layer = 0, const std::string& group = "", AnimationFadeOutMode fadeOutMode = AnimationFadeOutMode::SameLayerAndGroup
     );
-#endif // EGRET_WASM
     /**
      * - Play a specific animation from the specific time.
      * @param animationName - The name of animation data.

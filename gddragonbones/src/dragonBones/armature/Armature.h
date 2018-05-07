@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
+ * Copyright (c) 2012-2018 DragonBones team and other contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -78,46 +78,39 @@ public:
 public:
     /**
      * @internal
-     * @private
      */
     int _cacheFrameIndex;
     /**
      * @internal
-     * @private
      */
     ArmatureData* _armatureData;
     /**
      * @internal
-     * @private
      */
     DragonBones* _dragonBones;
     /**
      * @internal
-     * @private
      */
     Slot* _parent;
     /**
      * @internal
-     * @private
      */
     TextureAtlasData* _replaceTextureAtlasData;
     /**
      * @internal
-     * @private
      */
     std::vector<Constraint*> _constraints;
 
 protected:
     bool _debugDraw;
     bool _lockUpdate;
-    bool _bonesDirty;
     bool _slotsDirty;
     bool _zOrderDirty;
     bool _flipX;
     bool _flipY;
     std::vector<Bone*> _bones;
     std::vector<Slot*> _slots;
-    std::vector<ActionData*> _actions;
+    std::vector<EventObject*> _actions;
     Animation* _animation;
     IArmatureProxy* _proxy;
     void* _display;
@@ -139,46 +132,32 @@ public:
     }
 
 protected:
-    /**
-     * @private
-     */
     virtual void _onClear() override;
 
 private:
-    void _sortBones();
     void _sortSlots();
 
 public:
     /**
      * @internal
-     * @private
      */
     void _sortZOrder(const int16_t* slotIndices, unsigned offset);
     /**
      * @internal
-     * @private
      */
-    void _addBoneToBoneList(Bone* value);
+    void _addBone(Bone* value);
     /**
      * @internal
-     * @private
      */
-    void _removeBoneFromBoneList(Bone* value);
+    void _addSlot(Slot* value);
     /**
      * @internal
-     * @private
      */
-    void _addSlotToSlotList(Slot* value);
+    void _addConstraint(Constraint* value);
     /**
      * @internal
-     * @private
      */
-    void _removeSlotFromSlotList(Slot* value);
-    /**
-     * @internal
-     * @private
-     */
-    void _bufferAction(ActionData* action, bool append);
+    void _bufferAction(EventObject* action, bool append);
     /**
      * - Dispose the armature. (Return to the object pool)
      * @example
@@ -204,7 +183,6 @@ public:
     void dispose();
     /**
      * @internal
-     * @private
      */
     void init(ArmatureData *armatureData, IArmatureProxy* proxy, void* display, DragonBones* dragonBones);
     /**
@@ -346,26 +324,6 @@ public:
      */
     Slot* getSlotByDisplay(void* display) const;
     /**
-     * @deprecated
-     */
-    void addBone(Bone* value, const std::string& parentName);
-    /**
-     * @deprecated
-     */
-    void addSlot(Slot* value, const std::string& boneName);
-    /**
-     * @private
-     */
-    void addConstraint(Constraint* value);
-    /**
-     * @deprecated
-     */
-    void removeBone(Bone* value);
-    /**
-     * @deprecated
-     */
-    void removeSlot(Slot* value);
-    /**
      * - Get all bones.
      * @see dragonBones.Bone
      * @version DragonBones 3.0
@@ -397,7 +355,6 @@ public:
     {
         return _slots;
     }
-
     /**
      * - Whether to flip the armature horizontally.
      * @version DragonBones 5.5
@@ -558,6 +515,14 @@ public:
         return _display;
     }
     /**
+     * @private
+     */
+    inline void* getReplacedTexture() const
+    {
+        return _replacedTexture;
+    }
+    void setReplacedTexture(void* value);
+    /**
      * @inheritDoc
      */
     inline WorldClock* getClock() const override
@@ -581,14 +546,6 @@ public:
     {
         return _parent;
     }
-    /**
-     * @private
-     */
-    inline void* getReplacedTexture() const 
-    {
-        return _replacedTexture;
-    }
-    void setReplacedTexture(void* value);
 
 public: // For WebAssembly.
     IAnimatable* getAnimatable() const { return (IAnimatable*)this; }
