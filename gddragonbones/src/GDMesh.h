@@ -70,8 +70,11 @@ public:
         col_debug.a = modulate.a;
         for(unsigned long i = 0; i < verticesColor.size(); ++i)
         {
-            verticesColor[i] = modulate;
-
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+            verticesColor.write[i] = modulate;
+#else
+			verticesColor[i] = modulate;
+#endif
         }
     }
 

@@ -190,15 +190,27 @@ void GDSlot::_updateFrame()
                         u = floatArray[uvOffset + i];
                         v = floatArray[uvOffset + i + 1];
                         __get_uv_pt(__uv, currentTextureData->rotated, u, v, region, atlas);
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+                        frameDisplay->verticesColor.write[iH] = Color(1,1,1,1);
+                        frameDisplay->verticesUV.write[iH] = __uv;
+                        frameDisplay->verticesPos.write[iH] = Point2(floatArray[vertexOffset + i],
+						hasFFD * floatArray[vertexOffset + i + 1]);
+#else
                         frameDisplay->verticesColor[iH] = Color(1,1,1,1);
                         frameDisplay->verticesUV[iH] = __uv;
-                        frameDisplay->verticesPos[iH] = Point2(floatArray[vertexOffset + i], hasFFD * floatArray[vertexOffset + i + 1]);
+                        frameDisplay->verticesPos[iH] = Point2(floatArray[vertexOffset + i],
+						hasFFD * floatArray[vertexOffset + i + 1]);
+#endif
                     }
 
                     // setup indicies
                     for (std::size_t i = 0; i < triangleCount * 3; ++i)
                     {
-                        frameDisplay->indices[i] = intArray[currentVerticesData ->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+                        frameDisplay->indices.write[i] = intArray[currentVerticesData ->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];
+#else
+                        frameDisplay->indices[i] = intArray[currentVerticesData ->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];		
+#endif					
                     }
 
                     _textureScale = 1.0f;
@@ -206,14 +218,21 @@ void GDSlot::_updateFrame()
                 }  else // Normal texture
                 {
                     frameDisplay->indices.resize(6);
-
-                    frameDisplay->indices[0] = 0;
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+                    frameDisplay->indices.write[0] = 0;
+                    frameDisplay->indices.write[1] = 1;
+                    frameDisplay->indices.write[2] = 2;
+                    frameDisplay->indices.write[3] = 2;
+                    frameDisplay->indices.write[4] = 3;
+                    frameDisplay->indices.write[5] = 0;
+#else
+					frameDisplay->indices[0] = 0;
                     frameDisplay->indices[1] = 1;
                     frameDisplay->indices[2] = 2;
                     frameDisplay->indices[3] = 2;
                     frameDisplay->indices[4] = 3;
                     frameDisplay->indices[5] = 0;
-
+#endif
                     frameDisplay->verticesColor.resize(4);
                     frameDisplay->verticesUV.resize(4);
                     frameDisplay->verticesPos.resize(4);
@@ -221,8 +240,23 @@ void GDSlot::_updateFrame()
                     const auto scale = currentTextureData->parent->scale * _armature->_armatureData->scale;
                     const auto height = (currentTextureData->rotated ? region.width : region.height) * scale/2.f;
                     const auto width = (currentTextureData->rotated ? region.height : region.width) * scale/2.f;
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+                    frameDisplay->verticesColor.write[0] = Color(1,1,1,1);
+                    frameDisplay->verticesColor.write[1] = Color(1,1,1,1);
+                    frameDisplay->verticesColor.write[2] = Color(1,1,1,1);
+                    frameDisplay->verticesColor.write[3] = Color(1,1,1,1);
 
-                    frameDisplay->verticesColor[0] = Color(1,1,1,1);
+                    frameDisplay->verticesPos.write[3] = Vector2(-width, -height);
+                    frameDisplay->verticesPos.write[2] = Vector2(width, -height);
+                    frameDisplay->verticesPos.write[1] = Vector2(width, height);
+                    frameDisplay->verticesPos.write[0] = Vector2(-width, height);
+
+                    __get_uv_pt(frameDisplay->verticesUV.write[0], currentTextureData->rotated, 0, 0, region, atlas);
+                    __get_uv_pt(frameDisplay->verticesUV.write[1], currentTextureData->rotated, 1.f, 0, region, atlas);
+                    __get_uv_pt(frameDisplay->verticesUV.write[2], currentTextureData->rotated, 1.f, 1.f, region, atlas);
+                    __get_uv_pt(frameDisplay->verticesUV.write[3], currentTextureData->rotated, 0, 1.f, region, atlas);
+#else
+					frameDisplay->verticesColor[0] = Color(1,1,1,1);
                     frameDisplay->verticesColor[1] = Color(1,1,1,1);
                     frameDisplay->verticesColor[2] = Color(1,1,1,1);
                     frameDisplay->verticesColor[3] = Color(1,1,1,1);
@@ -236,7 +270,7 @@ void GDSlot::_updateFrame()
                     __get_uv_pt(frameDisplay->verticesUV[1], currentTextureData->rotated, 1.f, 0, region, atlas);
                     __get_uv_pt(frameDisplay->verticesUV[2], currentTextureData->rotated, 1.f, 1.f, region, atlas);
                     __get_uv_pt(frameDisplay->verticesUV[3], currentTextureData->rotated, 0, 1.f, region, atlas);
-
+#endif
                     _pivotY = 0;
                     _pivotX = 0;
                     _textureScale = scale;
@@ -316,7 +350,11 @@ void GDSlot::_updateMesh()
 					yG += (matrix.b * xL + matrix.d * yL + matrix.ty) * weight;
 				}
 			}
-            meshDisplay->verticesPos[i] = Vector2(xG, yG);
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+            meshDisplay->verticesPos.write[i] = Vector2(xG, yG);
+#else
+			meshDisplay->verticesPos[i] = Vector2(xG, yG);
+#endif
 		}
 	}
 	else if (hasFFD)
@@ -336,7 +374,11 @@ void GDSlot::_updateMesh()
 			const auto iH = (i >> 1);
             const auto xG = floatArray[vertexOffset + i] * scale + deformVertices[i];
             const auto yG = floatArray[vertexOffset + i + 1] * scale + deformVertices[i + 1];
-            meshDisplay->verticesPos[iH] = Vector2(xG, -yG);
+#if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
+            meshDisplay->verticesPos.write[iH] = Vector2(xG, -yG);
+#else
+			meshDisplay->verticesPos[iH] = Vector2(xG, -yG);
+#endif
 		}
 	}
 
