@@ -6,7 +6,7 @@ Plugin module for Godot Game Engine to use DragonBones
 * Homepage DragonBones: http://dragonbones.com
 
 #### Support Versions
-* Godot 2.1 & Godot 3
+* Godot 2.1 ... Godot 3.4
 * DragonBones Pro 5.6
 
 #### Support Platforms

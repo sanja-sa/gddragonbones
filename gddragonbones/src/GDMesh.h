@@ -55,7 +55,7 @@ public:
 
         if(b_debug || !texture.is_valid())
         {
-            for (int idx = 0; idx < indices.size(); idx += 3)
+            for (size_t idx = 0; idx < indices.size(); idx += 3)
             {
                 VS::get_singleton()->canvas_item_add_line(get_canvas_item(), verticesPos[indices[idx]], verticesPos[indices[idx+1]], col_debug, 1.0);
                 VS::get_singleton()->canvas_item_add_line(get_canvas_item(), verticesPos[indices[idx+1]], verticesPos[indices[idx+2]], col_debug, 1.0);
@@ -68,7 +68,7 @@ public:
     {
         GDDisplay::set_modulate(_col);
         col_debug.a = modulate.a;
-        for(unsigned long i = 0; i < verticesColor.size(); ++i)
+        for(size_t i = 0; i < verticesColor.size(); ++i)
         {
 #if (VERSION_MAJOR == 3 && VERSION_MINOR >= 1)
             verticesColor.write[i] = modulate;

@@ -18,7 +18,7 @@ env_modules.Append(CPPFLAGS=["-I", "modules/gddragonbones/src",
 ])
 
 if (env['platform'] != 'windows'):
-	env_modules.Append(CXXFLAGS=['-std=c++11'])
+	env_modules.Append(CXXFLAGS=['-std=c++14'])
 
 Export('env_modules')
 Export('env')

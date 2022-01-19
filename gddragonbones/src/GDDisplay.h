@@ -4,7 +4,7 @@
 #include "scene/resources/texture.h"
 #include "servers/visual_server.h"
 #include "scene/2d/node_2d.h"
-#include <version_generated.gen.h>
+#include <core/version_generated.gen.h>
 
 DRAGONBONES_USING_NAME_SPACE;
 
