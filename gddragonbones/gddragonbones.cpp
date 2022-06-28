@@ -793,15 +793,15 @@ void GDDragonBones::_bind_methods()
     ADD_SIGNAL(MethodInfo("dragon_fade_out", PropertyInfo(Variant::STRING, "anim")));
     ADD_SIGNAL(MethodInfo("dragon_fade_out_complete", PropertyInfo(Variant::STRING, "anim")));
 
-    BIND_CONSTANT(ANIMATION_PROCESS_FIXED);
-    BIND_CONSTANT(ANIMATION_PROCESS_IDLE);
+    BIND_ENUM_CONSTANT(ANIMATION_PROCESS_FIXED);
+    BIND_ENUM_CONSTANT(ANIMATION_PROCESS_IDLE);
 
-    BIND_CONSTANT(FadeOut_None);
-    BIND_CONSTANT(FadeOut_SameLayer);
-    BIND_CONSTANT(FadeOut_SameGroup);
-    BIND_CONSTANT(FadeOut_SameLayerAndGroup);
-    BIND_CONSTANT(FadeOut_All);
-    BIND_CONSTANT(FadeOut_Single);
+    BIND_ENUM_CONSTANT(FadeOut_None);
+    BIND_ENUM_CONSTANT(FadeOut_SameLayer);
+    BIND_ENUM_CONSTANT(FadeOut_SameGroup);
+    BIND_ENUM_CONSTANT(FadeOut_SameLayerAndGroup);
+    BIND_ENUM_CONSTANT(FadeOut_All);
+    BIND_ENUM_CONSTANT(FadeOut_Single);
 }
 
 void GDDragonBones::_get_property_list(List<PropertyInfo>* _p_list) const
