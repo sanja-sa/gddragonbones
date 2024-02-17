@@ -1,0 +1,7 @@
+.cache/
+
+*.obj
+
+compile_commands.json
+
+.sconsign.dblite
