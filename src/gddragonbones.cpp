@@ -68,15 +68,15 @@ bool GDDragonBonesResource::load_bones_data(const String &_path) {
 void GDDragonBones::_cleanup() {
 	b_inited = false;
 
-	// if (p_armature != nullptr) {
-	// 	p_armature->queue_free();
-	// 	if (p_armature->get_parent() == this) {
-	// 		remove_child(p_armature);
-	// 	}
-	// 	p_armature = nullptr;
-	// }
+	if (p_armature) {
+		if (p_armature->get_parent() == this) {
+			remove_child(p_armature);
+		}
+		p_armature->queue_free();
+		p_armature = nullptr;
+	}
 
-	if (p_factory != nullptr) {
+	if (p_factory) {
 		memfree(p_factory);
 		p_factory = nullptr;
 	}
@@ -351,13 +351,13 @@ float GDDragonBones::get_speed() const {
 	return f_speed;
 }
 
-void GDDragonBones::set_animation_process_mode(GDArmatureDisplay::AnimMode _mode) {
+void GDDragonBones::set_animation_process_mode(GDArmatureDisplay::AnimationCallbackModeProcess _mode) {
 	if (m_anim_mode == _mode)
 		return;
 	m_anim_mode = _mode;
 }
 
-GDArmatureDisplay::AnimMode GDDragonBones::get_animation_process_mode() const {
+GDArmatureDisplay::AnimationCallbackModeProcess GDDragonBones::get_animation_process_mode() const {
 	return m_anim_mode;
 }
 
@@ -369,13 +369,13 @@ void GDDragonBones::_notification(int _what) {
 		} break;
 
 		case NOTIFICATION_PROCESS: {
-			if (m_anim_mode == GDArmatureDisplay::ANIMATION_PROCESS_IDLE && b_active)
-				p_factory->update(get_process_delta_time());
+			if (b_active && m_anim_mode == GDArmatureDisplay::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
+				advance(get_process_delta_time());
 		} break;
 
 		case NOTIFICATION_PHYSICS_PROCESS: {
-			if (m_anim_mode == GDArmatureDisplay::ANIMATION_PROCESS_FIXED && b_active)
-				p_factory->update(get_physics_process_delta_time());
+			if (b_active && m_anim_mode == GDArmatureDisplay::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
+				advance(get_physics_process_delta_time());
 		} break;
 	}
 }

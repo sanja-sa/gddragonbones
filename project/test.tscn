@@ -7,9 +7,6 @@
 [node name="GDDragonBones" type="GDDragonBones"]
 texture = ExtResource("1_eak1s")
 resource = ExtResource("2_np8lw")
-playback/play = true
-playback/current_animation = "Idle"
 playback/loop = 0
 position = Vector2(450, 405)
-texture = ExtResource("1_eak1s")
 script = ExtResource("3_wdyqp")

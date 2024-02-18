@@ -33,7 +33,7 @@ private:
 	Ref<GDDragonBonesResource> m_res;
 	String str_curr_anim{ "[none]" };
 	GDArmatureDisplay *p_armature{ nullptr };
-	GDArmatureDisplay::AnimMode m_anim_mode{ GDArmatureDisplay::ANIMATION_PROCESS_IDLE };
+	GDArmatureDisplay::AnimationCallbackModeProcess m_anim_mode{ GDArmatureDisplay::ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
 	float f_speed{ 1.0f };
 	float f_progress{ 0.0f };
 	int c_loop{ -1 };
@@ -82,20 +82,14 @@ public:
 	void set_texture(const Ref<Texture2D> &_p_texture);
 	Ref<Texture2D> get_texture() const;
 
-	void set_animation_process_mode(GDArmatureDisplay::AnimMode _mode);
-	GDArmatureDisplay::AnimMode get_animation_process_mode() const;
+	void set_animation_process_mode(GDArmatureDisplay::AnimationCallbackModeProcess _mode);
+	GDArmatureDisplay::AnimationCallbackModeProcess get_animation_process_mode() const;
 
-	// #if (VERSION_MAJOR >= 3)
-	// #else
-	// 	void set_opacity(float _f_opacity);
-	// 	float get_opacity() const;
-
-	// 	void set_blend_mode(CanvasItemMaterial::BlendMode _blend_mode);
-	// 	CanvasItemMaterial::BlendMode get_blend_mode() const;
-
-	// 	void set_modulate(const Color &_p_color);
-	// 	Color get_modulate() const;
-	// #endif
+	void advance(float p_delta) {
+		if (p_factory) {
+			p_factory->update(p_delta);
+		}
+	}
 
 	// #if COMPATIBILITY_ENABLED
 	/**

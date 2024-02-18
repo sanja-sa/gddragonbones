@@ -5,3 +5,7 @@
 compile_commands.json
 
 .sconsign.dblite
+
+project/bin
+
+*.pdb

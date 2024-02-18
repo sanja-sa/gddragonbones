@@ -13,9 +13,10 @@ namespace godot {
 class GDArmatureDisplay : public GDDisplay, virtual public dragonBones::IArmatureProxy {
 	GDCLASS(GDArmatureDisplay, Node2D)
 public:
-	enum AnimMode {
-		ANIMATION_PROCESS_FIXED,
-		ANIMATION_PROCESS_IDLE,
+	enum AnimationCallbackModeProcess {
+		ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS = 0,
+		ANIMATION_CALLBACK_MODE_PROCESS_IDLE = 1,
+		ANIMATION_CALLBACK_MODE_PROCESS_MANUAL = 2,
 	};
 
 	enum AnimFadeOutMode {
@@ -126,5 +127,5 @@ public:
 
 } //namespace godot
 
-VARIANT_ENUM_CAST(godot::GDArmatureDisplay::AnimMode);
+VARIANT_ENUM_CAST(godot::GDArmatureDisplay::AnimationCallbackModeProcess);
 VARIANT_ENUM_CAST(godot::GDArmatureDisplay::AnimFadeOutMode);
