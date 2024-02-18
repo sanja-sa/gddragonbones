@@ -66,8 +66,12 @@ void initialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	GDREGISTER_INTERNAL_CLASS(dragonBones::GDMesh);
+	GDREGISTER_INTERNAL_CLASS(GDMesh);
+
 	GDREGISTER_CLASS(GDDragonBones);
+	GDREGISTER_CLASS(GDArmatureDisplay);
+	GDREGISTER_CLASS(GDSlot);
+	GDREGISTER_CLASS(GDBone2D);
 	GDREGISTER_CLASS(GDDragonBonesResource);
 }
 

@@ -4,8 +4,11 @@
 #include "GDMesh.h"
 #include "GDSlot.h"
 #include "GDTextureAtlasData.h"
+#include "GDTextureData.h"
+#include "dragonBones/DragonBonesHeaders.h"
 
-DRAGONBONES_NAMESPACE_BEGIN
+using namespace godot;
+using namespace dragonBones;
 
 GDFactory::GDFactory(GDOwnerNode *_p_owner) {
 	p_owner = _p_owner;
@@ -14,7 +17,6 @@ GDFactory::GDFactory(GDOwnerNode *_p_owner) {
 }
 
 GDFactory::~GDFactory() {
-	using namespace godot;
 	clear();
 
 	if (_dragonBonesInstance) {
@@ -33,7 +35,7 @@ DragonBonesData *GDFactory::loadDragonBonesData(const char *_p_data_loaded, cons
 	return parseDragonBonesData(_p_data_loaded, name, 1.0f);
 }
 
-TextureAtlasData *GDFactory::loadTextureAtlasData(const char *_p_data_loaded, godot::Ref<godot::Texture> *_p_atlasTexture, const std::string &name, float scale) {
+TextureAtlasData *GDFactory::loadTextureAtlasData(const char *_p_data_loaded, Ref<Texture> *_p_atlasTexture, const std::string &name, float scale) {
 	return static_cast<GDTextureAtlasData *>(BaseFactory::parseTextureAtlasData(_p_data_loaded, _p_atlasTexture, name, scale));
 }
 
@@ -74,21 +76,74 @@ Armature *GDFactory::_buildArmature(const BuildArmaturePackage &dataPackage) con
 }
 
 Slot *GDFactory::_buildSlot(const BuildArmaturePackage &dataPackage, const SlotData *slotData, Armature *armature) const {
-	auto slot = BaseObject::borrowObject<GDSlot>();
+	auto slot = BaseObject::borrowObject<Slot_GD>();
 	auto wrapperDisplay = GDMesh::create();
+	_wrapperSlots.push_back(std::unique_ptr<Slot_GD>(slot));
+
 	slot->init(slotData, armature, wrapperDisplay, wrapperDisplay);
-	wrapperDisplay->set_name(slot->getName().c_str());
+	slot->update(0);
+
+	GDSlot *tree_slot = memnew(GDSlot);
+	tree_slot->set_slot(slot);
+
+	const auto proxy = static_cast<GDArmatureDisplay *>(slot->getArmature()->getDisplay());
+	proxy->add_slot(slot->getName(), tree_slot);
+
 	return slot;
 }
 
-void GDFactory::addDBEventListener(const std::string &type, const Func_t &listener) {}
-void GDFactory::removeDBEventListener(const std::string &type, const Func_t &listener) {}
 void GDFactory::dispatchDBEvent(const std::string &type, EventObject *value) {
-	p_owner->dispatch_snd_event(godot::String(type.c_str()), value);
+	p_owner->dispatch_snd_event(String(type.c_str()), value);
 }
 
-bool GDFactory::hasDBEventListener(const std::string &type) const {
-	return true;
+Armature *GDFactory::_buildChildArmature(const BuildArmaturePackage *dataPackage, Slot *slot, DisplayData *displayData) const {
+	auto childDisplayName = slot->_slotData->name;
+
+	const auto proxy = static_cast<GDArmatureDisplay *>(slot->getArmature()->getDisplay());
+
+	GDArmatureDisplay *childArmature = nullptr;
+
+	if (dataPackage != nullptr) {
+		childArmature = buildArmatureDisplay(displayData->path, dataPackage->dataName);
+	} else {
+		childArmature = buildArmatureDisplay(displayData->path, displayData->getParent()->parent->parent->name);
+	}
+
+	if (childArmature == nullptr) {
+		ERR_PRINT("Child armature is null");
+		return nullptr;
+	}
+
+	childArmature->set_z_index(slot->_zOrder);
+	childArmature->getArmature()->setFlipY(true);
+	childArmature->hide();
+	proxy->add_child(childArmature);
+
+	return childArmature->getArmature();
 }
 
-DRAGONBONES_NAMESPACE_END
+void GDFactory::_buildBones(const BuildArmaturePackage &dataPackage, Armature *armature) const {
+	for (const auto boneData : dataPackage.armature->sortedBones) {
+		const auto bone = BaseObject::borrowObject<Bone>();
+		bone->init(boneData, armature);
+
+		GDBone2D *new_bone = GDBone2D::create();
+		new_bone->set_data(bone);
+		new_bone->set_name(bone->getName().c_str());
+		GDArmatureDisplay *display = static_cast<GDArmatureDisplay *>(armature->getDisplay());
+		display->add_bone(bone->getName(), new_bone);
+	}
+
+	for (const auto &pair : dataPackage.armature->constraints) {
+		// TODO more constraint type.
+		const auto constraint = BaseObject::borrowObject<IKConstraint>();
+		constraint->init(pair.second, armature);
+		armature->_addConstraint(constraint);
+	}
+}
+
+void GDFactory::clear(bool disposeData) {
+	_wrapperSlots.clear();
+
+	BaseFactory::clear();
+}

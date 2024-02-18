@@ -1,53 +1,49 @@
 #include "GDSlot.h"
+#include "GDArmatureDisplay.h"
+#include "GDDisplay.h"
 #include "GDMesh.h"
 #include "GDTextureData.h"
-#include "godot_cpp/variant/utility_functions.hpp"
 
-DRAGONBONES_NAMESPACE_BEGIN
+#include "dragonBones/DragonBonesHeaders.h"
 
-void GDSlot::_updateZOrder() {
+using namespace godot;
+using namespace dragonBones;
+
+void Slot_GD::_updateZOrder() {
 	_renderDisplay->set_z_index(_zOrder);
 }
 
-void GDSlot::_updateVisible() {
+void Slot_GD::_updateVisible() {
 	if (_parent->getVisible())
 		_renderDisplay->show();
 	else
 		_renderDisplay->hide();
 }
 
-void GDSlot::_updateBlendMode() {
-	using MatBlendMode = godot::CanvasItemMaterial::BlendMode;
+void Slot_GD::_updateBlendMode() {
 	if (_renderDisplay) {
-		MatBlendMode __blend = MatBlendMode::BLEND_MODE_MIX;
-		// #if (VERSION_MAJOR == 3)
-		// #else
-		// 		GDOwnerNode *__p_owner = _renderDisplay->p_owner;
-		// 		if (__p_owner)
-		// 			__blend = __p_owner->get_blend_mode();
-		// #endif
-		// if (!__blend) {
+		CanvasItemMaterial::BlendMode __blend = CanvasItemMaterial::BLEND_MODE_MIX;
+
 		switch (_blendMode) {
 			case BlendMode::Normal:
-				__blend = MatBlendMode::BLEND_MODE_MIX;
+				__blend = CanvasItemMaterial::BLEND_MODE_MIX;
 				break;
 
 			case BlendMode::Add:
-				__blend = MatBlendMode::BLEND_MODE_ADD;
+				__blend = CanvasItemMaterial::BLEND_MODE_ADD;
 				break;
 
 			case BlendMode::Multiply:
-				__blend = MatBlendMode::BLEND_MODE_MUL;
+				__blend = CanvasItemMaterial::BLEND_MODE_MUL;
 				break;
 
 			case BlendMode::Subtract:
-				__blend = MatBlendMode::BLEND_MODE_SUB;
+				__blend = CanvasItemMaterial::BLEND_MODE_SUB;
 				break;
 
 			default:
 				break;
 		}
-		// }
 		_renderDisplay->set_blend_mode(__blend);
 		_renderDisplay->queue_redraw();
 	} else if (_childArmature) {
@@ -58,36 +54,52 @@ void GDSlot::_updateBlendMode() {
 	}
 }
 
-void GDSlot::_updateColor() {
+void Slot_GD::_updateColor() {
 	if (!_renderDisplay)
 		return;
 
-	GDOwnerNode *__p_owner = _renderDisplay->p_owner;
+	Color __color(_colorTransform.redMultiplier,
+			_colorTransform.greenMultiplier,
+			_colorTransform.blueMultiplier,
+			_colorTransform.alphaMultiplier);
 
-	_renderDisplay->set_modulate(__p_owner ? __p_owner->get_modulate() : godot::Color{ _colorTransform.redMultiplier, _colorTransform.greenMultiplier, _colorTransform.blueMultiplier, _colorTransform.alphaMultiplier });
+	GDOwnerNode *__p_owner = _renderDisplay->p_owner;
+	if (__p_owner) {
+		__color.a *= __p_owner->get_modulate().a;
+		__color.r *= __p_owner->get_modulate().r;
+		__color.g *= __p_owner->get_modulate().g;
+		__color.b *= __p_owner->get_modulate().b;
+	}
+
+	_renderDisplay->update_modulate(__color);
 	_renderDisplay->queue_redraw();
 }
 
-void GDSlot::_initDisplay(void *value, bool isRetain) {
+void Slot_GD::_initDisplay(void *value, bool isRetain) {
 }
 
-void GDSlot::_disposeDisplay(void *value, bool isRelease) {
+void Slot_GD::_disposeDisplay(void *value, bool isRelease) {
 }
 
-void GDSlot::_onUpdateDisplay() {
+void Slot_GD::_onUpdateDisplay() {
 	_renderDisplay = static_cast<GDDisplay *>(_display != nullptr ? _display : _rawDisplay);
 }
 
-void GDSlot::_addDisplay() {
+void Slot_GD::_addDisplay() {
 }
 
-void GDSlot::_replaceDisplay(void *value, bool isArmatureDisplay) {
+void Slot_GD::_replaceDisplay(void *value, bool isArmatureDisplay) {
+	static_cast<GDDisplay *>(_renderDisplay)->show();
+
+	if (value != nullptr) {
+		static_cast<GDDisplay *>(value)->hide();
+	}
 }
 
-void GDSlot::_removeDisplay() {
+void Slot_GD::_removeDisplay() {
 }
 
-void GDSlot::__get_uv_pt(godot::Point2 &_pt, bool _is_rot, float _u, float _v, const Rectangle &_reg, const TextureAtlasData *_p_atlas) {
+void Slot_GD::__get_uv_pt(Point2 &_pt, bool _is_rot, float _u, float _v, const Rectangle &_reg, const TextureAtlasData *_p_atlas) {
 	if (_is_rot) {
 		_pt.x = (_reg.x + (1.f - _v) * _reg.width) / float(_p_atlas->width);
 		_pt.y = (_reg.y + _u * _reg.height) / float(_p_atlas->height);
@@ -97,7 +109,7 @@ void GDSlot::__get_uv_pt(godot::Point2 &_pt, bool _is_rot, float _u, float _v, c
 	}
 }
 
-void GDSlot::_updateFrame() {
+void Slot_GD::_updateFrame() {
 	const auto currentVerticesData = (_deformVertices != nullptr && _display == _meshDisplay) ? _deformVertices->verticesData : nullptr;
 	auto currentTextureData = static_cast<GDTextureData *>(_textureData);
 
@@ -106,8 +118,8 @@ void GDSlot::_updateFrame() {
 		const auto &region = currentTextureData->region;
 		auto frameDisplay = static_cast<GDMesh *>(_renderDisplay);
 
-		if (currentVerticesData != nullptr) // Mesh.
-		{
+		if (currentVerticesData != nullptr) {
+			// Mesh.
 			const auto &deformVertices = _deformVertices->vertices;
 			const auto hasFFD = !deformVertices.empty();
 
@@ -128,7 +140,12 @@ void GDSlot::_updateFrame() {
 			frameDisplay->verticesColor.resize(vertexCount);
 			frameDisplay->verticesUV.resize(vertexCount);
 			frameDisplay->verticesPos.resize(vertexCount);
-			godot::Point2 __uv;
+			auto indices_ptr = frameDisplay->indices.ptrw();
+			auto verticesColor_ptr = frameDisplay->verticesColor.ptrw();
+			auto verticesUV_ptr = frameDisplay->verticesUV.ptrw();
+			auto verticesPos_ptr = frameDisplay->verticesPos.ptrw();
+
+			Point2 __uv;
 			std::size_t iH;
 			float u, v;
 			for (std::size_t i = 0, l = (vertexCount << 1); i < l; i += 2) {
@@ -137,52 +154,55 @@ void GDSlot::_updateFrame() {
 				v = floatArray[uvOffset + i + 1];
 				__get_uv_pt(__uv, currentTextureData->rotated, u, v, region, atlas);
 
-				frameDisplay->verticesColor[iH] = { 1, 1, 1, 1 };
-				frameDisplay->verticesUV[iH] = __uv;
-				frameDisplay->verticesPos[iH] = { floatArray[vertexOffset + i],
-					hasFFD * floatArray[vertexOffset + i + 1] };
+				verticesColor_ptr[iH] = Color(1, 1, 1, 1);
+				verticesUV_ptr[iH] = __uv;
+				verticesPos_ptr[iH] = Point2(floatArray[vertexOffset + i],
+						hasFFD * floatArray[vertexOffset + i + 1]);
 			}
 
 			// setup indicies
 			for (std::size_t i = 0; i < triangleCount * 3; ++i) {
-				frameDisplay->indices[i] = intArray[currentVerticesData->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];
+				indices_ptr[i] = intArray[currentVerticesData->offset + (unsigned)BinaryOffset::MeshVertexIndices + i];
 			}
 
 			_textureScale = 1.0f;
 			_identityTransform();
-		} else // Normal texture
-		{
+		} else {
+			// Normal texture
 			frameDisplay->indices.resize(6);
-
-			frameDisplay->indices[0] = 0;
-			frameDisplay->indices[1] = 1;
-			frameDisplay->indices[2] = 2;
-			frameDisplay->indices[3] = 2;
-			frameDisplay->indices[4] = 3;
-			frameDisplay->indices[5] = 0;
-
 			frameDisplay->verticesColor.resize(4);
 			frameDisplay->verticesUV.resize(4);
 			frameDisplay->verticesPos.resize(4);
+			auto indices_ptr = frameDisplay->indices.ptrw();
+			auto verticesColor_ptr = frameDisplay->verticesColor.ptrw();
+			auto verticesUV_ptr = frameDisplay->verticesUV.ptrw();
+			auto verticesPos_ptr = frameDisplay->verticesPos.ptrw();
+
+			indices_ptr[0] = 0;
+			indices_ptr[1] = 1;
+			indices_ptr[2] = 2;
+			indices_ptr[3] = 2;
+			indices_ptr[4] = 3;
+			indices_ptr[5] = 0;
 
 			const auto scale = currentTextureData->parent->scale * _armature->_armatureData->scale;
 			const auto height = (currentTextureData->rotated ? region.width : region.height) * scale / 2.f;
 			const auto width = (currentTextureData->rotated ? region.height : region.width) * scale / 2.f;
 
-			frameDisplay->verticesColor[0] = { 1, 1, 1, 1 };
-			frameDisplay->verticesColor[1] = { 1, 1, 1, 1 };
-			frameDisplay->verticesColor[2] = { 1, 1, 1, 1 };
-			frameDisplay->verticesColor[3] = { 1, 1, 1, 1 };
+			verticesColor_ptr[0] = Color(1, 1, 1, 1);
+			verticesColor_ptr[1] = Color(1, 1, 1, 1);
+			verticesColor_ptr[2] = Color(1, 1, 1, 1);
+			verticesColor_ptr[3] = Color(1, 1, 1, 1);
 
-			frameDisplay->verticesPos[3] = { -width, -height };
-			frameDisplay->verticesPos[2] = { width, -height };
-			frameDisplay->verticesPos[1] = { width, height };
-			frameDisplay->verticesPos[0] = { -width, height };
+			verticesPos_ptr[3] = Vector2(-width, -height);
+			verticesPos_ptr[2] = Vector2(width, -height);
+			verticesPos_ptr[1] = Vector2(width, height);
+			verticesPos_ptr[0] = Vector2(-width, height);
 
-			__get_uv_pt(frameDisplay->verticesUV[0], currentTextureData->rotated, 0, 0, region, atlas);
-			__get_uv_pt(frameDisplay->verticesUV[1], currentTextureData->rotated, 1.f, 0, region, atlas);
-			__get_uv_pt(frameDisplay->verticesUV[2], currentTextureData->rotated, 1.f, 1.f, region, atlas);
-			__get_uv_pt(frameDisplay->verticesUV[3], currentTextureData->rotated, 0, 1.f, region, atlas);
+			__get_uv_pt(verticesUV_ptr[0], currentTextureData->rotated, 0, 0, region, atlas);
+			__get_uv_pt(verticesUV_ptr[1], currentTextureData->rotated, 1.f, 0, region, atlas);
+			__get_uv_pt(verticesUV_ptr[2], currentTextureData->rotated, 1.f, 1.f, region, atlas);
+			__get_uv_pt(verticesUV_ptr[3], currentTextureData->rotated, 0, 1.f, region, atlas);
 
 			_pivotY = 0;
 			_pivotX = 0;
@@ -199,7 +219,7 @@ void GDSlot::_updateFrame() {
 	_renderDisplay->hide();
 }
 
-void GDSlot::_updateMesh() {
+void Slot_GD::_updateMesh() {
 	const auto scale = _armature->_armatureData->scale;
 	const auto textureData = static_cast<GDTextureData *>(_textureData);
 	const auto &deformVertices = _deformVertices->vertices;
@@ -213,7 +233,7 @@ void GDSlot::_updateMesh() {
 		return;
 	}
 
-	if (meshDisplay->indices.is_empty()) {
+	if (!meshDisplay->indices.size()) {
 		_armature->invalidUpdate("", true);
 		return;
 	}
@@ -229,6 +249,7 @@ void GDSlot::_updateMesh() {
 			weightFloatOffset += 65536;
 		}
 
+		auto verticesPos_ptr = meshDisplay->verticesPos.ptrw();
 		for (
 				std::size_t i = 0, iD = 0, iB = weightData->offset + (unsigned)BinaryOffset::WeigthBoneIndices + weightData->bones.size(), iV = (std::size_t)weightFloatOffset, iF = 0;
 				i < vertexCount;
@@ -253,7 +274,8 @@ void GDSlot::_updateMesh() {
 					yG += (matrix.b * xL + matrix.d * yL + matrix.ty) * weight;
 				}
 			}
-			meshDisplay->verticesPos[i] = { xG, yG };
+
+			meshDisplay->verticesPos[i] = Vector2(xG, yG);
 		}
 	} else if (hasFFD) {
 		const auto data = verticesData->data;
@@ -265,26 +287,29 @@ void GDSlot::_updateMesh() {
 		if (vertexOffset < 0) {
 			vertexOffset += 65536;
 		}
+
+		auto verticesPos_ptr = meshDisplay->verticesPos.ptrw();
 		for (std::size_t i = 0, l = (vertexCount << 1); i < l; i += 2) {
 			const auto iH = (i >> 1);
 			const auto xG = floatArray[vertexOffset + i] * scale + deformVertices[i];
 			const auto yG = floatArray[vertexOffset + i + 1] * scale + deformVertices[i + 1];
-			meshDisplay->verticesPos[iH] = { xG, -yG };
+
+			verticesPos_ptr[iH] = Vector2(xG, -yG);
 		}
 	}
 
 	_renderDisplay->queue_redraw();
 }
 
-void GDSlot::_identityTransform() {
-	godot::Transform2D matrix{};
+void Slot_GD::_identityTransform() {
+	Transform2D matrix;
 	matrix.scale({ _textureScale, _textureScale });
 	_renderDisplay->set_transform(matrix);
 	_renderDisplay->queue_redraw();
 }
 
-void GDSlot::_updateTransform() {
-	godot::Vector2 pos{ 0, 0 };
+void Slot_GD::_updateTransform() {
+	Vector2 pos = Vector2(0, 0);
 	if (((void *)_renderDisplay) == _rawDisplay || ((void *)_renderDisplay) == _meshDisplay) {
 		pos.x = globalTransformMatrix.tx - (globalTransformMatrix.a * _pivotX + globalTransformMatrix.c * _pivotY);
 		pos.y = globalTransformMatrix.ty - (globalTransformMatrix.b * _pivotX + globalTransformMatrix.d * _pivotY);
@@ -292,27 +317,26 @@ void GDSlot::_updateTransform() {
 		pos.x = globalTransformMatrix.tx;
 		pos.y = globalTransformMatrix.ty;
 	} else {
-		godot::Vector2 anchorPoint(1.f, 1.f);
+		Vector2 anchorPoint(1.f, 1.f);
 
 		pos.x = globalTransformMatrix.tx - (globalTransformMatrix.a * anchorPoint.x - globalTransformMatrix.c * anchorPoint.y);
 		pos.y = globalTransformMatrix.ty - (globalTransformMatrix.b * anchorPoint.x - globalTransformMatrix.d * anchorPoint.y);
 	}
 
-	godot::Transform2D matrix(
-			globalTransformMatrix.a * _textureScale,
-			globalTransformMatrix.b * _textureScale,
-			-globalTransformMatrix.c * _textureScale,
-			-globalTransformMatrix.d * _textureScale,
-			pos.x * _textureScale,
-			pos.y * _textureScale);
-
-	// matrix.scale({ 1, 1 });
+	Transform2D matrix{
+		globalTransformMatrix.a * _textureScale,
+		globalTransformMatrix.b * _textureScale,
+		-globalTransformMatrix.c * _textureScale,
+		-globalTransformMatrix.d * _textureScale,
+		pos.x * _textureScale,
+		pos.y * _textureScale
+	};
 
 	_renderDisplay->set_transform(matrix);
 	_renderDisplay->queue_redraw();
 }
 
-void GDSlot::_onClear() {
+void Slot_GD::_onClear() {
 	Slot::_onClear();
 
 	_textureScale = 1.0f;
@@ -323,4 +347,119 @@ void GDSlot::_onClear() {
 	}
 }
 
-DRAGONBONES_NAMESPACE_END
+void GDSlot::set_slot(Slot_GD *_slot) {
+	this->slot = _slot;
+}
+
+/* GODOT CLASS WRAPPER FOR GIVING SCRIPT ACCESS */
+void GDSlot::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_display_color_multiplier"), &GDSlot::get_display_color_multiplier);
+	ClassDB::bind_method(D_METHOD("set_display_color_multiplier", "color"), &GDSlot::set_display_color_multiplier);
+	ClassDB::bind_method(D_METHOD("set_display_index", "index"), &GDSlot::set_display_index);
+	ClassDB::bind_method(D_METHOD("set_display_by_name", "name"), &GDSlot::set_display_by_name);
+	ClassDB::bind_method(D_METHOD("get_display_index"), &GDSlot::get_display_index);
+	ClassDB::bind_method(D_METHOD("get_display_count"), &GDSlot::get_display_count);
+	ClassDB::bind_method(D_METHOD("next_display"), &GDSlot::next_display);
+	ClassDB::bind_method(D_METHOD("previous_display"), &GDSlot::previous_display);
+	ClassDB::bind_method(D_METHOD("get_child_armature"), &GDSlot::get_child_armature);
+	ClassDB::bind_method(D_METHOD("get_slot_name"), &GDSlot::get_slot_name);
+}
+
+Color GDSlot::get_display_color_multiplier() {
+	ColorTransform transform(slot->_colorTransform);
+
+	Color return_color;
+	return_color.r = transform.redMultiplier;
+	return_color.g = transform.greenMultiplier;
+	return_color.b = transform.blueMultiplier;
+	return_color.a = transform.alphaMultiplier;
+
+	return return_color;
+}
+
+void GDSlot::set_display_color_multiplier(const Color &_color) {
+	ColorTransform _new_color;
+	_new_color.redMultiplier = _color.r;
+	_new_color.greenMultiplier = _color.g;
+	_new_color.blueMultiplier = _color.b;
+	_new_color.alphaMultiplier = _color.a;
+
+	slot->_setColor(_new_color);
+}
+
+void GDSlot::set_display_index(int index) {
+	slot->setDisplayIndex(index);
+}
+
+void GDSlot::set_display_by_name(const String &_name) {
+	const std::vector<DisplayData *> *rawData = slot->getRawDisplayDatas();
+
+	// we only want to update the slot if there's a choice
+	if (rawData->size() > 1) {
+		const char *desired_item = _name.ascii().get_data();
+		std::string NONE_STRING("none");
+
+		if (NONE_STRING.compare(desired_item) == 0) {
+			slot->setDisplayIndex(-1);
+		}
+
+		for (int i = 0; i < rawData->size(); i++) {
+			DisplayData *display_data = rawData->at(i);
+
+			if (display_data->name.compare(desired_item) == 0) {
+				slot->setDisplayIndex(i);
+				return;
+			}
+		}
+	} else {
+		WARN_PRINT("Slot has only 1 item; refusing to set slot");
+		return;
+	}
+
+	WARN_PRINT("Slot has no item called \"" + _name);
+}
+
+int GDSlot::get_display_index() {
+	return slot->getDisplayIndex();
+}
+
+int GDSlot::get_display_count() {
+	return slot->getDisplayList().size();
+}
+
+void GDSlot::next_display() {
+	int current_slot = slot->getDisplayIndex();
+	current_slot++;
+
+	current_slot = current_slot < get_display_count() ? current_slot : -1;
+
+	set_display_index(current_slot);
+}
+
+void GDSlot::previous_display() {
+	int current_slot = slot->getDisplayIndex();
+	current_slot--;
+
+	current_slot = current_slot >= -1 ? current_slot : get_display_count() - 1;
+
+	set_display_index(current_slot);
+}
+
+String GDSlot::get_slot_name() {
+	if (slot == nullptr)
+		return String();
+	return slot->getName().c_str();
+}
+
+GDDisplay *GDSlot::get_child_armature() {
+	if (slot->getDisplayList().size() == 0)
+		return nullptr;
+
+	std::pair<void *, DisplayType> display = slot->getDisplayList()[slot->getDisplayIndex()];
+	if (display.second == DisplayType::Armature) {
+		Armature *armature = static_cast<Armature *>(display.first);
+		GDArmatureDisplay *converted = static_cast<GDArmatureDisplay *>(armature->getDisplay());
+		return converted;
+	}
+	return nullptr;
+}

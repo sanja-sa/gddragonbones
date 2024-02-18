@@ -1,58 +1,40 @@
 #pragma once
 
 #include "dragonBones/event/EventObject.h"
-#include "godot_cpp/classes/canvas_item.hpp"
 #include "godot_cpp/classes/canvas_item_material.hpp"
 #include "godot_cpp/classes/node2d.hpp"
-#include "godot_cpp/classes/sprite2d.hpp"
 
-DRAGONBONES_NAMESPACE_BEGIN
+namespace godot {
 
-class GDOwnerNode : public godot::Sprite2D {
-	// GDCLASS(GDOwnerNode, godot::Node2D);
-
-	// protected:
-	// 	static void _bind_methods() {}
-
+class GDOwnerNode : public Node2D {
 public:
-	virtual ~GDOwnerNode() {}
+	GDOwnerNode() = default;
+	virtual ~GDOwnerNode() = default;
 
-	virtual void dispatch_event(const godot::String &_str_type, const dragonBones::EventObject *_p_value) = 0;
-	virtual void dispatch_snd_event(const godot::String &_str_type, const dragonBones::EventObject *_p_value) = 0;
+	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) = 0;
+	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) = 0;
 };
 
-class GDDisplay : public godot::Node2D {
-	// GDCLASS(GDDisplay, Node2D);
-
-	// protected:
-	// 	static void _bind_methods() {}
-
+class GDDisplay : public GDOwnerNode {
 private:
-	// GDDisplay(const GDDisplay &);
+	GDDisplay(const GDDisplay &);
 
 public:
-	godot::Ref<godot::Texture> texture;
-	// godot::Ref<godot::CanvasItemMaterial> p_canvas_mat;
-
-	// godot::Color modulate;
-	GDOwnerNode *p_owner;
-	bool b_debug;
+	Ref<Texture> texture;
+	GDOwnerNode *p_owner = nullptr;
+	bool b_debug = false;
 
 public:
-	GDDisplay() {
-		p_owner = nullptr;
-		b_debug = false;
-		// p_canvas_mat.instantiate();
-	}
-	virtual ~GDDisplay() {}
+	GDDisplay() = default;
+	virtual ~GDDisplay() = default;
 
-	void set_blend_mode(godot::CanvasItemMaterial::BlendMode _blend) {
-		// p_canvas_mat->set_blend_mode(_blend);
-		// set_material(p_canvas_mat);
-		if (auto mat = Object::cast_to<godot::CanvasItemMaterial>(get_material().ptr())) {
-			mat->set_blend_mode(_blend);
+	void set_blend_mode(CanvasItemMaterial::BlendMode p_blend_mode) {
+		if (auto mat = Object::cast_to<CanvasItemMaterial>(get_material().ptr())) {
+			mat->set_blend_mode(p_blend_mode);
 		}
 	}
+
+	virtual void update_modulate(const Color &p_modulate) { set_modulate(p_modulate); }
 };
 
-DRAGONBONES_NAMESPACE_END
+}; //namespace godot

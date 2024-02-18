@@ -1,19 +1,18 @@
 #pragma once
 
-#include <dragonBones/DragonBonesHeaders.h>
+#include "dragonBones/model/TextureAtlasData.h"
+namespace godot {
 
-DRAGONBONES_NAMESPACE_BEGIN
-
-class GDTextureAtlasData : public TextureAtlasData {
+class GDTextureAtlasData : public dragonBones::TextureAtlasData {
 	BIND_CLASS_TYPE_B(GDTextureAtlasData);
 
 public:
 	GDTextureAtlasData();
 	~GDTextureAtlasData();
 
-	virtual TextureData *createTexture() const override;
+	virtual dragonBones::TextureData *createTexture() const override;
 
 	void setRenderTexture();
 };
 
-DRAGONBONES_NAMESPACE_END
+} //namespace godot
