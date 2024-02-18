@@ -108,6 +108,9 @@ public:
      * @private
      */
     std::map<std::string, ArmatureData*> armatures;
+
+	std::string info;
+
     /**
      * @internal
      */

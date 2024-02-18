@@ -62,7 +62,8 @@ const char* DataParser::AABB = "aabb";
 const char* DataParser::COLOR = "color";
 
 const char* DataParser::VERSION = "version";
-const char* DataParser::COMPATIBLE_VERSION = "compatibleVersion";
+const char *DataParser::COMPATIBLE_VERSION = "compatibleVersion";
+const char *DataParser::INFO = "info";
 const char* DataParser::FRAME_RATE = "frameRate";
 const char* DataParser::TYPE = "type";
 const char* DataParser::SUB_TYPE = "subType";
