@@ -4,14 +4,13 @@
 #include "GDDisplay.h"
 #include "dragonBones/armature/Armature.h"
 #include "dragonBones/armature/IArmatureProxy.h"
+#include "dragonBones/model/DisplayData.h"
 #include "wrappers/GDSlot.h"
-
-DRAGONBONES_USING_NAME_SPACE;
 
 namespace godot {
 
-class GDArmatureDisplay : public GDDisplay, virtual public dragonBones::IArmatureProxy {
-	GDCLASS(GDArmatureDisplay, Node2D)
+class DragonBonesArmature : public GDDisplay, virtual public dragonBones::IArmatureProxy {
+	GDCLASS(DragonBonesArmature, Node2D)
 public:
 	enum AnimationCallbackModeProcess {
 		ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS = 0,
@@ -29,54 +28,53 @@ public:
 	};
 
 private:
-	GDArmatureDisplay(const GDArmatureDisplay &);
+	DragonBonesArmature(const DragonBonesArmature &);
 
 protected:
-	Armature *p_armature = nullptr;
+	dragonBones::Armature *p_armature{ nullptr };
 	std::map<std::string, GDBone2D *> _bones;
 	std::map<std::string, GDSlot *> _slots;
 
 public:
-	GDArmatureDisplay();
-	~GDArmatureDisplay();
-
-	static GDArmatureDisplay *create() {
-		return memnew(GDArmatureDisplay);
-	}
+	DragonBonesArmature();
+	~DragonBonesArmature();
 
 	virtual void update_modulate(const Color &p_modulate) override {
 		set_modulate(p_modulate);
 		update_childs(true);
 	}
 
-	virtual void dispatch_event(const String &_str_type, const EventObject *_p_value) override;
-	virtual void dispatch_snd_event(const String &_str_type, const EventObject *_p_value) override;
+	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
+	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 
-	Slot *getSlot(const std::string &name) const;
+	dragonBones::Slot *getSlot(const std::string &name) const;
 
 	void add_bone(std::string name, GDBone2D *new_bone);
 	void add_slot(std::string name, GDSlot *new_slot);
-	void addEvent(const std::string &_type, const std::function<void(EventObject *)> &_callback);
+	void addEvent(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_callback);
 	void removeEvent(const std::string &_type);
 
 	virtual bool hasDBEventListener(const std::string &_type) const override { return true; }
-	virtual void addDBEventListener(const std::string &_type, const std::function<void(EventObject *)> &_listener) override {}
-	virtual void removeDBEventListener(const std::string &_type, const std::function<void(EventObject *)> &_listener) override {}
-	virtual void dispatchDBEvent(const std::string &_type, EventObject *_value) override;
+	virtual void addDBEventListener(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_listener) override {}
+	virtual void removeDBEventListener(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_listener) override {}
+	virtual void dispatchDBEvent(const std::string &_type, dragonBones::EventObject *_value) override;
 
-	void dbInit(Armature *_p_armature) override;
+	void dbInit(dragonBones::Armature *_p_armature) override;
 	void dbClear() override;
 	void dbUpdate() override;
 
 	void dispose(bool disposeProxy) override;
 
-	Armature *getArmature() const override { return p_armature; }
-	Animation *getAnimation() const override { return p_armature->getAnimation(); }
+	virtual dragonBones::Armature *getArmature() const override { return p_armature; }
+	virtual dragonBones::Animation *getAnimation() const override { return p_armature->getAnimation(); }
 
 	void add_parent_class(bool _b_debug, const Ref<Texture> &_m_texture_atlas);
 	void update_childs(bool _b_color, bool _b_blending = false);
 	void update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
 	void update_material_inheritance(bool _b_inherit_material);
+
+	//
+	dragonBones::Slot *getSlot(const String &p_name) const { return p_armature->getSlot(p_name.ascii().get_data()); }
 
 public:
 	/* METHOD BINDINGS */
@@ -104,13 +102,22 @@ public:
 	void stop(const String &_animation_name, bool b_reset = false);
 	void stop_all_animations(bool b_children = false, bool b_reset = false);
 	void fade_in(const String &_animation_name, float _time,
-			int _loop, int _layer, const String &_group, GDArmatureDisplay::AnimFadeOutMode _fade_out_mode);
+			int _loop, int _layer, const String &_group, DragonBonesArmature::AnimFadeOutMode _fade_out_mode);
 
 	void reset();
 
 	bool has_slot(const String &_slot_name) const;
 	Dictionary get_slots();
 	GDSlot *get_slot(const String &_slot_name);
+	void set_slot_display_index(const String &_slot_name, int _index);
+	void set_slot_by_item_name(const String &_slot_name, const String &_item_name);
+	void set_all_slots_by_item_name(const String &_item_name);
+	int get_slot_display_index(const String &_slot_name);
+	int get_total_items_in_slot(const String &_slot_name);
+	void cycle_next_item_in_slot(const String &_slot_name);
+	void cycle_previous_item_in_slot(const String &_slot_name);
+	Color get_slot_display_color_multiplier(const String &_slot_name);
+	void set_slot_display_color_multiplier(const String &_slot_name, const Color &_color);
 
 	void flip_x(bool _b_flip);
 	bool is_flipped_x() const;
@@ -127,5 +134,5 @@ public:
 
 } //namespace godot
 
-VARIANT_ENUM_CAST(godot::GDArmatureDisplay::AnimationCallbackModeProcess);
-VARIANT_ENUM_CAST(godot::GDArmatureDisplay::AnimFadeOutMode);
+VARIANT_ENUM_CAST(godot::DragonBonesArmature::AnimationCallbackModeProcess);
+VARIANT_ENUM_CAST(godot::DragonBonesArmature::AnimFadeOutMode);

@@ -1,8 +1,8 @@
 #include "GDSlot.h"
-#include "GDArmatureDisplay.h"
+#include "DragonBonesArmature.h"
 #include "GDDisplay.h"
 #include "GDMesh.h"
-#include "GDTextureData.h"
+#include "GDTextureAtlasData.h"
 
 #include "dragonBones/DragonBonesHeaders.h"
 
@@ -347,10 +347,6 @@ void Slot_GD::_onClear() {
 	}
 }
 
-void GDSlot::set_slot(Slot_GD *_slot) {
-	this->slot = _slot;
-}
-
 /* GODOT CLASS WRAPPER FOR GIVING SCRIPT ACCESS */
 void GDSlot::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_display_color_multiplier"), &GDSlot::get_display_color_multiplier);
@@ -458,7 +454,7 @@ GDDisplay *GDSlot::get_child_armature() {
 	std::pair<void *, DisplayType> display = slot->getDisplayList()[slot->getDisplayIndex()];
 	if (display.second == DisplayType::Armature) {
 		Armature *armature = static_cast<Armature *>(display.first);
-		GDArmatureDisplay *converted = static_cast<GDArmatureDisplay *>(armature->getDisplay());
+		DragonBonesArmature *converted = static_cast<DragonBonesArmature *>(armature->getDisplay());
 		return converted;
 	}
 	return nullptr;

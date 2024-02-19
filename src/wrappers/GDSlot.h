@@ -40,12 +40,24 @@ class GDSlot : public Node {
 	GDCLASS(GDSlot, Node);
 
 private:
-	Slot_GD *slot;
+	Slot_GD *slot{ nullptr };
 
-	/* BIND METHODS */
+	friend class DragonBonesFactory;
+
 public:
-	void set_slot(Slot_GD *_slot);
+	GDSlot() = default;
+	GDSlot(Slot_GD *p_slot) :
+			slot(p_slot) {}
 
+	virtual ~GDSlot() {
+		if (slot) {
+			slot->returnToPool();
+			slot = nullptr;
+		}
+	}
+
+public:
+	/* BIND METHODS */
 	static void _bind_methods();
 
 	Color get_display_color_multiplier();

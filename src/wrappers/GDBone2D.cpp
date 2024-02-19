@@ -77,9 +77,9 @@ Vector2 GDBone2D::get_bone_offset_position() {
 	return Vector2(_x, _y);
 }
 
-void GDBone2D::set_data(dragonBones::Bone *new_bone) {
-	this->boneData = new_bone;
-}
+// void GDBone2D::set_data(dragonBones::Bone *new_bone) {
+// 	this->boneData = new_bone;
+// }
 
 String GDBone2D::get_bone_name() {
 	if (boneData == nullptr)

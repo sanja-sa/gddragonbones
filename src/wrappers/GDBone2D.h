@@ -1,24 +1,32 @@
 #pragma once
 
 #include "dragonBones/armature/Bone.h"
-#include "godot_cpp/classes/bone2d.hpp"
+#include "godot_cpp/classes/node2d.hpp"
 
 namespace godot {
 
-class GDBone2D : public Bone2D {
-	GDCLASS(GDBone2D, Bone2D);
+class GDBone2D : public Node2D {
+	GDCLASS(GDBone2D, Node2D);
 
 protected:
-	dragonBones::Bone *boneData;
+	dragonBones::Bone *boneData{ nullptr };
 
 public:
-	static GDBone2D *create() {
-		return memnew(GDBone2D);
-	};
+	GDBone2D() = default;
+	GDBone2D(dragonBones::Bone *p_bone_data) :
+			boneData(p_bone_data) {}
 
+	~GDBone2D() {
+		if (boneData) {
+			boneData->returnToPool();
+			boneData = nullptr;
+		}
+	}
+
+public:
 	static void _bind_methods();
 
-	void set_data(dragonBones::Bone *new_bone);
+	// void set_data(dragonBones::Bone *new_bone);
 
 	String get_bone_name();
 	Vector2 get_bone_position();

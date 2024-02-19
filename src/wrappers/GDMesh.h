@@ -43,10 +43,6 @@ public:
 		}
 	}
 
-	static GDMesh *create() {
-		return memnew(GDMesh);
-	}
-
 	virtual void _draw() override {
 		if (indices.is_empty())
 			return;

@@ -1,39 +1,32 @@
 #pragma once
 
+#include "dragonBones/core/DragonBones.h"
+#include "dragonbones_resource.h"
+#include "wrappers/DragonBonesFactory.h"
 #include "wrappers/GDDisplay.h"
-#include "wrappers/GDFactory.h"
 
 namespace godot {
-// Resource class
-class GDDragonBonesResource : public Resource {
-	GDCLASS(GDDragonBonesResource, Resource)
-protected:
-	static void _bind_methods() {}
+
+class DragonBones : public GDOwnerNode, public dragonBones::IEventDispatcher {
+	GDCLASS(DragonBones, GDOwnerNode)
 
 public:
-	GDDragonBonesResource();
-	~GDDragonBonesResource();
+	// sound IEventDispatcher
+	virtual void addDBEventListener(const std::string &type, const std::function<void(dragonBones::EventObject *)> &listener) override {}
+	virtual void removeDBEventListener(const std::string &type, const std::function<void(dragonBones::EventObject *)> &listener) override {}
+	virtual void dispatchDBEvent(const std::string &type, dragonBones::EventObject *value) override {
+		dispatch_snd_event(String(type.c_str()), value);
+	}
+	virtual bool hasDBEventListener(const std::string &type) const override { return true; }
 
-	void set_def_texture_path(const String &_path);
-	bool load_texture_atlas_data(const String &_path);
-	bool load_bones_data(const String &_path);
-
-	String str_default_tex_path;
-	char *p_data_texture_atlas;
-	char *p_data_bones;
-};
-
-class GDDragonBones : public GDOwnerNode {
-	GDCLASS(GDDragonBones, GDOwnerNode)
-
-public:
 private:
-	GDFactory *p_factory{ nullptr };
+	dragonBones::DragonBones *p_instance{ nullptr };
+
 	Ref<Texture2D> m_texture_atlas;
-	Ref<GDDragonBonesResource> m_res;
+	Ref<DragonBonesResource> m_res;
 	String str_curr_anim{ "[none]" };
-	GDArmatureDisplay *p_armature{ nullptr };
-	GDArmatureDisplay::AnimationCallbackModeProcess m_anim_mode{ GDArmatureDisplay::ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
+	DragonBonesArmature *p_armature{ nullptr };
+	DragonBonesArmature::AnimationCallbackModeProcess m_anim_mode{ DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
 	float f_speed{ 1.0f };
 	float f_progress{ 0.0f };
 	int c_loop{ -1 };
@@ -42,8 +35,12 @@ private:
 	bool b_debug{ false };
 	bool b_inited{ false };
 	bool b_try_playing{ false };
+
+	// #ifdef COMPATIBILITY_ENABLED
 	bool b_flip_x{ false };
 	bool b_flip_y{ false };
+	// #endif
+
 	bool b_inherit_child_material{ true };
 
 protected:
@@ -55,20 +52,20 @@ protected:
 	void _get_property_list(List<PropertyInfo> *_p_list) const;
 
 public:
-	GDDragonBones() = default;
-	~GDDragonBones() { _cleanup(); }
+	DragonBones() = default;
+	~DragonBones() { _cleanup(); }
 
 	void _cleanup();
 
 	// to initial pose current animation
 	void _reset();
 
-	virtual void dispatch_event(const String &_str_type, const EventObject *_p_value) override;
-	virtual void dispatch_snd_event(const String &_str_type, const EventObject *_p_value) override;
+	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
+	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 
 	// setters/getters
-	void set_resource(Ref<GDDragonBonesResource> _p_data);
-	Ref<GDDragonBonesResource> get_resource();
+	void set_resource(Ref<DragonBonesResource> _p_data);
+	Ref<DragonBonesResource> get_resource();
 
 	void set_inherit_material(bool _b_enable);
 	bool is_material_inherited() const;
@@ -82,27 +79,28 @@ public:
 	void set_texture(const Ref<Texture2D> &_p_texture);
 	Ref<Texture2D> get_texture() const;
 
-	void set_animation_process_mode(GDArmatureDisplay::AnimationCallbackModeProcess _mode);
-	GDArmatureDisplay::AnimationCallbackModeProcess get_animation_process_mode() const;
+	void set_animation_process_mode(DragonBonesArmature::AnimationCallbackModeProcess _mode);
+	DragonBonesArmature::AnimationCallbackModeProcess get_animation_process_mode() const;
 
 	void advance(float p_delta) {
-		if (p_factory) {
-			p_factory->update(p_delta);
+		if (p_instance) {
+			p_instance->advanceTime(p_delta);
 		}
 	}
 
-	// #if COMPATIBILITY_ENABLED
-	/**
-		THESE DEPRECATED FUNCTIONS WILL BE REMOVED IN VERSION 3.2.53
-	*/
-	/* deprecated */ void fade_in(const String &_name_anim, float _time, int _loop, int _layer, const String &_group, GDArmatureDisplay::AnimFadeOutMode _fade_out_mode);
-	/* deprecated */ void fade_out(const String &_name_anim);
-	/* deprecated */ void set_debug(bool _b_debug);
-	/* deprecated */ bool is_debug() const;
+	void set_debug(bool _b_debug);
+	bool is_debug() const;
+
 	/* deprecated */ void flip_x(bool _b_flip);
 	/* deprecated */ bool is_fliped_x() const;
 	/* deprecated */ void flip_y(bool _b_flip);
 	/* deprecated */ bool is_fliped_y() const;
+#ifdef COMPATIBILITY_ENABLED
+	/**
+		THESE DEPRECATED FUNCTIONS WILL BE REMOVED IN VERSION 3.2.53
+	*/
+	/* deprecated */ void fade_in(const String &_name_anim, float _time, int _loop, int _layer, const String &_group, DragonBonesArmature::AnimFadeOutMode _fade_out_mode);
+	/* deprecated */ void fade_out(const String &_name_anim);
 	/* deprecated */ String get_current_animation() const;
 	/* deprecated */ String get_current_animation_on_layer(int _layer) const;
 	/* deprecated */ float tell();
@@ -128,12 +126,14 @@ public:
 	/* deprecated */ void play_new_animation_from_time(const String &_str_anim, int _num_times, float _f_time);
 	/* deprecated */ void stop(bool _b_all = false);
 	/* deprecated */ inline void stop_all() { stop(true); }
-	// #endif
-	GDArmatureDisplay *get_armature();
+#endif
+	DragonBonesArmature *get_armature();
 
 private:
-	const DragonBonesData *get_dragonbones_data() const;
-	ArmatureData *get_armature_data(const String &_armature_name);
+	const dragonBones::DragonBonesData *get_dragonbones_data() const;
+	dragonBones::ArmatureData *get_armature_data(const String &_armature_name);
+
+	void _on_resource_changed();
 };
 
 } //namespace godot
