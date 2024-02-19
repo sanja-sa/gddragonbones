@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GDBone2D.h"
+#include "DragonBonesBone.h"
 #include "GDDisplay.h"
 #include "dragonBones/armature/Armature.h"
 #include "dragonBones/armature/IArmatureProxy.h"
@@ -32,7 +32,7 @@ private:
 
 protected:
 	dragonBones::Armature *p_armature{ nullptr };
-	std::map<std::string, GDBone2D *> _bones;
+	std::map<std::string, Ref<DragonBonesBone>> _bones;
 	std::map<std::string, GDSlot *> _slots;
 
 public:
@@ -49,7 +49,7 @@ public:
 
 	dragonBones::Slot *getSlot(const std::string &name) const;
 
-	void add_bone(std::string name, GDBone2D *new_bone);
+	void add_bone(std::string name, const Ref<DragonBonesBone> &new_bone);
 	void add_slot(std::string name, GDSlot *new_slot);
 	void addEvent(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_callback);
 	void removeEvent(const std::string &_type);
@@ -129,7 +129,7 @@ public:
 	void set_ik_constraint_bend_positive(const String &name, bool bend_positive);
 
 	Dictionary get_bones();
-	GDBone2D *get_bone(const String &name);
+	Ref<DragonBonesBone> get_bone(const String &name);
 };
 
 } //namespace godot

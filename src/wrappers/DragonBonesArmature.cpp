@@ -431,7 +431,7 @@ Dictionary DragonBonesArmature::get_bones() {
 	return bones;
 }
 
-GDBone2D *DragonBonesArmature::get_bone(const String &name) {
+Ref<DragonBonesBone> DragonBonesArmature::get_bone(const String &name) {
 	return _bones[name.ascii().get_data()];
 }
 
@@ -451,9 +451,8 @@ Slot *DragonBonesArmature::getSlot(const std::string &name) const {
 	return p_armature->getSlot(name);
 }
 
-void DragonBonesArmature::add_bone(std::string name, GDBone2D *new_bone) {
+void DragonBonesArmature::add_bone(std::string name, const Ref<DragonBonesBone> &new_bone) {
 	_bones.insert(std::make_pair(name, new_bone));
-	add_child(new_bone);
 }
 
 void DragonBonesArmature::add_slot(std::string name, GDSlot *new_slot) {

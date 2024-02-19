@@ -1,7 +1,7 @@
 #include "register_types.h"
 
-#include "editor/dragonbones_editor_plugin.h"
 #include "dragonbones.h"
+#include "editor/dragonbones_editor_plugin.h"
 
 #include "godot_cpp/classes/editor_plugin_registration.hpp"
 
@@ -22,10 +22,13 @@ void initialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_INTERNAL_CLASS(GDMesh);
+
 	GDREGISTER_CLASS(DragonBones);
+	GDREGISTER_ABSTRACT_CLASS(DragonBonesBone);
+
 	GDREGISTER_CLASS(DragonBonesArmature);
 	GDREGISTER_CLASS(GDSlot);
-	GDREGISTER_CLASS(GDBone2D);
+
 	GDREGISTER_CLASS(DragonBonesResource);
 
 	if (!DragonBonesFactory::get_singleton()) {

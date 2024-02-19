@@ -73,7 +73,6 @@ Slot *DragonBonesFactory::_buildSlot(const BuildArmaturePackage &dataPackage, co
 	slot->update(0);
 
 	GDSlot *tree_slot = memnew(GDSlot(slot));
-	// tree_slot->set_slot(slot);
 
 	const auto proxy = static_cast<DragonBonesArmature *>(slot->getArmature()->getDisplay());
 	proxy->add_slot(slot->getName(), tree_slot);
@@ -112,9 +111,8 @@ void DragonBonesFactory::_buildBones(const BuildArmaturePackage &dataPackage, Ar
 		const auto bone = BaseObject::borrowObject<Bone>();
 		bone->init(boneData, armature);
 
-		GDBone2D *new_bone = memnew(GDBone2D(bone));
-		new_bone->set_name(bone->getName().c_str());
 		DragonBonesArmature *display = static_cast<DragonBonesArmature *>(armature->getDisplay());
+		Ref<DragonBonesBone> new_bone{ memnew(DragonBonesBone(bone, display)) };
 		display->add_bone(bone->getName(), new_bone);
 	}
 
