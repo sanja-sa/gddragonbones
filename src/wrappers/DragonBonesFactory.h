@@ -3,7 +3,7 @@
 #include <string>
 
 #include "DragonBonesArmature.h"
-#include "GDSlot.h"
+#include "DragonBonesSlot.h"
 #include "dragonBones/factory/BaseFactory.h"
 
 namespace godot {

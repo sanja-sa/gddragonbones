@@ -2,7 +2,7 @@
 
 #include "DragonBonesArmature.h"
 #include "GDMesh.h"
-#include "GDSlot.h"
+#include "DragonBonesSlot.h"
 #include "GDTextureAtlasData.h"
 #include "dragonBones/DragonBonesHeaders.h"
 
@@ -72,7 +72,7 @@ Slot *DragonBonesFactory::_buildSlot(const BuildArmaturePackage &dataPackage, co
 	slot->init(slotData, armature, wrapperDisplay, wrapperDisplay);
 	slot->update(0);
 
-	GDSlot *tree_slot = memnew(GDSlot(slot));
+	Ref<DragonBonesSlot> tree_slot{ memnew(DragonBonesSlot(slot)) };
 
 	const auto proxy = static_cast<DragonBonesArmature *>(slot->getArmature()->getDisplay());
 	proxy->add_slot(slot->getName(), tree_slot);

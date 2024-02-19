@@ -25,9 +25,8 @@ void initialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
 
 	GDREGISTER_CLASS(DragonBones);
 	GDREGISTER_ABSTRACT_CLASS(DragonBonesBone);
-
-	GDREGISTER_CLASS(DragonBonesArmature);
-	GDREGISTER_CLASS(GDSlot);
+	GDREGISTER_ABSTRACT_CLASS(DragonBonesSlot);
+	GDREGISTER_ABSTRACT_CLASS(DragonBonesArmature);
 
 	GDREGISTER_CLASS(DragonBonesResource);
 

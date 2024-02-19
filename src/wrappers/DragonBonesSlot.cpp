@@ -1,4 +1,4 @@
-#include "GDSlot.h"
+#include "DragonBonesSlot.h"
 #include "DragonBonesArmature.h"
 #include "GDDisplay.h"
 #include "GDMesh.h"
@@ -348,20 +348,21 @@ void Slot_GD::_onClear() {
 }
 
 /* GODOT CLASS WRAPPER FOR GIVING SCRIPT ACCESS */
-void GDSlot::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_display_color_multiplier"), &GDSlot::get_display_color_multiplier);
-	ClassDB::bind_method(D_METHOD("set_display_color_multiplier", "color"), &GDSlot::set_display_color_multiplier);
-	ClassDB::bind_method(D_METHOD("set_display_index", "index"), &GDSlot::set_display_index);
-	ClassDB::bind_method(D_METHOD("set_display_by_name", "name"), &GDSlot::set_display_by_name);
-	ClassDB::bind_method(D_METHOD("get_display_index"), &GDSlot::get_display_index);
-	ClassDB::bind_method(D_METHOD("get_display_count"), &GDSlot::get_display_count);
-	ClassDB::bind_method(D_METHOD("next_display"), &GDSlot::next_display);
-	ClassDB::bind_method(D_METHOD("previous_display"), &GDSlot::previous_display);
-	ClassDB::bind_method(D_METHOD("get_child_armature"), &GDSlot::get_child_armature);
-	ClassDB::bind_method(D_METHOD("get_slot_name"), &GDSlot::get_slot_name);
+void DragonBonesSlot::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_display_color_multiplier"), &DragonBonesSlot::get_display_color_multiplier);
+	ClassDB::bind_method(D_METHOD("set_display_color_multiplier", "color"), &DragonBonesSlot::set_display_color_multiplier);
+	ClassDB::bind_method(D_METHOD("set_display_index", "index"), &DragonBonesSlot::set_display_index);
+	ClassDB::bind_method(D_METHOD("set_display_by_name", "name"), &DragonBonesSlot::set_display_by_name);
+	ClassDB::bind_method(D_METHOD("get_display_index"), &DragonBonesSlot::get_display_index);
+	ClassDB::bind_method(D_METHOD("get_display_count"), &DragonBonesSlot::get_display_count);
+	ClassDB::bind_method(D_METHOD("next_display"), &DragonBonesSlot::next_display);
+	ClassDB::bind_method(D_METHOD("previous_display"), &DragonBonesSlot::previous_display);
+	ClassDB::bind_method(D_METHOD("get_child_armature"), &DragonBonesSlot::get_child_armature);
+	ClassDB::bind_method(D_METHOD("get_slot_name"), &DragonBonesSlot::get_slot_name);
 }
 
-Color GDSlot::get_display_color_multiplier() {
+Color DragonBonesSlot::get_display_color_multiplier() {
+	ERR_FAIL_NULL_V(slot, {});
 	ColorTransform transform(slot->_colorTransform);
 
 	Color return_color;
@@ -373,7 +374,8 @@ Color GDSlot::get_display_color_multiplier() {
 	return return_color;
 }
 
-void GDSlot::set_display_color_multiplier(const Color &_color) {
+void DragonBonesSlot::set_display_color_multiplier(const Color &_color) {
+	ERR_FAIL_NULL(slot);
 	ColorTransform _new_color;
 	_new_color.redMultiplier = _color.r;
 	_new_color.greenMultiplier = _color.g;
@@ -383,11 +385,13 @@ void GDSlot::set_display_color_multiplier(const Color &_color) {
 	slot->_setColor(_new_color);
 }
 
-void GDSlot::set_display_index(int index) {
+void DragonBonesSlot::set_display_index(int index) {
+	ERR_FAIL_NULL(slot);
 	slot->setDisplayIndex(index);
 }
 
-void GDSlot::set_display_by_name(const String &_name) {
+void DragonBonesSlot::set_display_by_name(const String &_name) {
+	ERR_FAIL_NULL(slot);
 	const std::vector<DisplayData *> *rawData = slot->getRawDisplayDatas();
 
 	// we only want to update the slot if there's a choice
@@ -415,15 +419,18 @@ void GDSlot::set_display_by_name(const String &_name) {
 	WARN_PRINT("Slot has no item called \"" + _name);
 }
 
-int GDSlot::get_display_index() {
+int DragonBonesSlot::get_display_index() {
+	ERR_FAIL_NULL_V(slot, -1);
 	return slot->getDisplayIndex();
 }
 
-int GDSlot::get_display_count() {
+int DragonBonesSlot::get_display_count() {
+	ERR_FAIL_NULL_V(slot, -1);
 	return slot->getDisplayList().size();
 }
 
-void GDSlot::next_display() {
+void DragonBonesSlot::next_display() {
+	ERR_FAIL_NULL(slot);
 	int current_slot = slot->getDisplayIndex();
 	current_slot++;
 
@@ -432,7 +439,8 @@ void GDSlot::next_display() {
 	set_display_index(current_slot);
 }
 
-void GDSlot::previous_display() {
+void DragonBonesSlot::previous_display() {
+	ERR_FAIL_NULL(slot);
 	int current_slot = slot->getDisplayIndex();
 	current_slot--;
 
@@ -441,14 +449,13 @@ void GDSlot::previous_display() {
 	set_display_index(current_slot);
 }
 
-String GDSlot::get_slot_name() {
-	if (slot == nullptr)
-		return String();
+String DragonBonesSlot::get_slot_name() {
+	ERR_FAIL_NULL_V(slot, {});
 	return slot->getName().c_str();
 }
 
-GDDisplay *GDSlot::get_child_armature() {
-	if (slot->getDisplayList().size() == 0)
+DragonBonesArmature *DragonBonesSlot::get_child_armature() {
+	if (!slot || slot->getDisplayList().size() == 0)
 		return nullptr;
 
 	std::pair<void *, DisplayType> display = slot->getDisplayList()[slot->getDisplayIndex()];

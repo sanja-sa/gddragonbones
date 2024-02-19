@@ -36,8 +36,8 @@ protected:
 	static void __get_uv_pt(Point2 &_pt, bool _is_rot, float _u, float _v, const dragonBones::Rectangle &_reg, const dragonBones::TextureAtlasData *_p_atlas);
 };
 
-class GDSlot : public Node {
-	GDCLASS(GDSlot, Node);
+class DragonBonesSlot : public RefCounted {
+	GDCLASS(DragonBonesSlot, RefCounted);
 
 private:
 	Slot_GD *slot{ nullptr };
@@ -45,11 +45,11 @@ private:
 	friend class DragonBonesFactory;
 
 public:
-	GDSlot() = default;
-	GDSlot(Slot_GD *p_slot) :
+	DragonBonesSlot() = default;
+	DragonBonesSlot(Slot_GD *p_slot) :
 			slot(p_slot) {}
 
-	virtual ~GDSlot() {
+	virtual ~DragonBonesSlot() {
 		if (slot) {
 			slot->returnToPool();
 			slot = nullptr;
@@ -70,7 +70,7 @@ public:
 	void previous_display();
 	String get_slot_name();
 
-	GDDisplay *get_child_armature();
+	class DragonBonesArmature *get_child_armature();
 };
 
 } //namespace godot

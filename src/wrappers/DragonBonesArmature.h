@@ -5,7 +5,7 @@
 #include "dragonBones/armature/Armature.h"
 #include "dragonBones/armature/IArmatureProxy.h"
 #include "dragonBones/model/DisplayData.h"
-#include "wrappers/GDSlot.h"
+#include "wrappers/DragonBonesSlot.h"
 
 namespace godot {
 
@@ -33,7 +33,7 @@ private:
 protected:
 	dragonBones::Armature *p_armature{ nullptr };
 	std::map<std::string, Ref<DragonBonesBone>> _bones;
-	std::map<std::string, GDSlot *> _slots;
+	std::map<std::string, Ref<DragonBonesSlot>> _slots;
 
 public:
 	DragonBonesArmature();
@@ -50,7 +50,7 @@ public:
 	dragonBones::Slot *getSlot(const std::string &name) const;
 
 	void add_bone(std::string name, const Ref<DragonBonesBone> &new_bone);
-	void add_slot(std::string name, GDSlot *new_slot);
+	void add_slot(std::string name, const Ref<DragonBonesSlot> &new_slot);
 	void addEvent(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_callback);
 	void removeEvent(const std::string &_type);
 
@@ -108,7 +108,7 @@ public:
 
 	bool has_slot(const String &_slot_name) const;
 	Dictionary get_slots();
-	GDSlot *get_slot(const String &_slot_name);
+	Ref<DragonBonesSlot> get_slot(const String &_slot_name);
 	void set_slot_display_index(const String &_slot_name, int _index);
 	void set_slot_by_item_name(const String &_slot_name, const String &_item_name);
 	void set_all_slots_by_item_name(const String &_item_name);

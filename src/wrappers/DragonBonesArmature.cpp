@@ -243,7 +243,7 @@ Dictionary DragonBonesArmature::get_slots() {
 	return slots;
 }
 
-GDSlot *DragonBonesArmature::get_slot(const String &_slot_name) {
+Ref<DragonBonesSlot> DragonBonesArmature::get_slot(const String &_slot_name) {
 	return _slots[_slot_name.ascii().get_data()];
 }
 
@@ -455,9 +455,8 @@ void DragonBonesArmature::add_bone(std::string name, const Ref<DragonBonesBone> 
 	_bones.insert(std::make_pair(name, new_bone));
 }
 
-void DragonBonesArmature::add_slot(std::string name, GDSlot *new_slot) {
+void DragonBonesArmature::add_slot(std::string name, const Ref<DragonBonesSlot> &new_slot) {
 	_slots.insert(std::make_pair(name, new_slot));
-	add_child(new_slot);
 }
 
 void DragonBonesArmature::dbInit(Armature *_p_armature) {
