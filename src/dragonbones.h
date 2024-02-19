@@ -14,10 +14,11 @@ public:
 	// sound IEventDispatcher
 	virtual void addDBEventListener(const std::string &type, const std::function<void(dragonBones::EventObject *)> &listener) override {}
 	virtual void removeDBEventListener(const std::string &type, const std::function<void(dragonBones::EventObject *)> &listener) override {}
-	virtual void dispatchDBEvent(const std::string &type, dragonBones::EventObject *value) override {
-		dispatch_snd_event(String(type.c_str()), value);
-	}
+
 	virtual bool hasDBEventListener(const std::string &type) const override { return true; }
+	virtual void dispatchDBEvent(const std::string &type, dragonBones::EventObject *value) override {
+		dispatch_sound_event(String(type.c_str()), value);
+	}
 
 private:
 	dragonBones::DragonBones *p_instance{ nullptr };
@@ -61,7 +62,7 @@ public:
 	void _reset();
 
 	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
-	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
+	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 
 	// setters/getters
 	void set_resource(Ref<DragonBonesResource> _p_data);

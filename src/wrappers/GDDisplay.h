@@ -12,7 +12,7 @@ public:
 	virtual ~GDOwnerNode() = default;
 
 	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) = 0;
-	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) = 0;
+	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) = 0;
 };
 
 class GDDisplay : public GDOwnerNode {
@@ -21,8 +21,8 @@ private:
 
 public:
 	Ref<Texture> texture;
-	GDOwnerNode *p_owner = nullptr;
-	bool b_debug = false;
+	GDOwnerNode *p_owner{ nullptr };
+	bool b_debug{ false };
 
 public:
 	GDDisplay() = default;

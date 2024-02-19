@@ -37,7 +37,7 @@ void DragonBones::_cleanup() {
 	m_res.unref();
 }
 
-void DragonBones::dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
+void DragonBones::dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
 	using namespace dragonBones;
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
@@ -175,7 +175,7 @@ void DragonBones::set_resource(Ref<DragonBonesResource> _p_data) {
 	p_armature->getArmature()->setFlipX(b_flip_x);
 	p_armature->getArmature()->setFlipY(b_flip_y);
 
-	p_armature->add_parent_class(b_debug, m_texture_atlas);
+	p_armature->setup_recursively(b_debug, m_texture_atlas);
 	// add main armature
 	add_child(p_armature);
 
@@ -221,7 +221,7 @@ bool DragonBones::is_active() const {
 void DragonBones::set_debug(bool _b_debug) {
 	b_debug = _b_debug;
 	if (b_inited)
-		p_armature->set_debug(b_debug);
+		p_armature->set_debug(b_debug, true);
 }
 
 bool DragonBones::is_debug() const {

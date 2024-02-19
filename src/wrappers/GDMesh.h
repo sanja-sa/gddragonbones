@@ -32,14 +32,14 @@ public:
 	virtual ~GDMesh() = default;
 
 	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override {
-		if (p_owner != nullptr) {
+		if (p_owner) {
 			p_owner->dispatch_event(_str_type, _p_value);
 		}
 	}
 
-	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) override {
-		if (p_owner != nullptr) {
-			p_owner->dispatch_snd_event(_str_type, _p_value);
+	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override {
+		if (p_owner) {
+			p_owner->dispatch_sound_event(_str_type, _p_value);
 		}
 	}
 

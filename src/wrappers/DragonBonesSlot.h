@@ -50,10 +50,10 @@ public:
 			slot(p_slot) {}
 
 	virtual ~DragonBonesSlot() {
-		if (slot) {
-			slot->returnToPool();
-			slot = nullptr;
-		}
+		// if (slot) {
+		// 	slot->returnToPool();
+		// 	slot = nullptr;
+		// }
 	}
 
 public:

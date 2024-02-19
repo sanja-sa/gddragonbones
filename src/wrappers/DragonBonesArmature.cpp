@@ -19,30 +19,44 @@ DragonBonesArmature::~DragonBonesArmature() {
 }
 
 void DragonBonesArmature::_bind_methods() {
+	// TODO:: 属性
 	ClassDB::bind_method(D_METHOD("is_frozen"), &DragonBonesArmature::is_frozen);
 	ClassDB::bind_method(D_METHOD("freeze"), &DragonBonesArmature::freeze);
 	ClassDB::bind_method(D_METHOD("thaw"), &DragonBonesArmature::thaw);
+
 	ClassDB::bind_method(D_METHOD("has_animation", "animation_name"), &DragonBonesArmature::has_animation);
 	ClassDB::bind_method(D_METHOD("get_animations"), &DragonBonesArmature::get_animations);
+
 	ClassDB::bind_method(D_METHOD("is_playing"), &DragonBonesArmature::is_playing);
 	ClassDB::bind_method(D_METHOD("play", "animation_name", "loop_count"), &DragonBonesArmature::play);
+
 	ClassDB::bind_method(D_METHOD("play_from_time", "animation_name", "f_time", "loop_count"), &DragonBonesArmature::play_from_time);
 	ClassDB::bind_method(D_METHOD("play_from_progress", "animation_name", "f_progress", "loop_count"), &DragonBonesArmature::play_from_progress);
+
 	ClassDB::bind_method(D_METHOD("stop", "animation_name", "b_reset"), &DragonBonesArmature::stop);
 	ClassDB::bind_method(D_METHOD("stop_all_animations", "b_reset"), &DragonBonesArmature::stop_all_animations);
+
 	ClassDB::bind_method(D_METHOD("fade_in"), &DragonBonesArmature::fade_in);
+
 	ClassDB::bind_method(D_METHOD("has_slot", "slot_name"), &DragonBonesArmature::has_slot);
 	ClassDB::bind_method(D_METHOD("get_slot", "slot_name"), &DragonBonesArmature::get_slot);
 	ClassDB::bind_method(D_METHOD("get_slots"), &DragonBonesArmature::get_slots);
+
 	ClassDB::bind_method(D_METHOD("reset"), &DragonBonesArmature::reset);
+
 	ClassDB::bind_method(D_METHOD("set_flip_x", "is_flipped"), &DragonBonesArmature::flip_x);
 	ClassDB::bind_method(D_METHOD("is_flipped_x"), &DragonBonesArmature::is_flipped_x);
+
 	ClassDB::bind_method(D_METHOD("set_flip_y", "is_flipped"), &DragonBonesArmature::flip_y);
 	ClassDB::bind_method(D_METHOD("is_flipped_y"), &DragonBonesArmature::is_flipped_y);
-	ClassDB::bind_method(D_METHOD("set_debug", "is_debug"), &DragonBonesArmature::set_debug);
+
+	ClassDB::bind_method(D_METHOD("set_debug", "debug"), &DragonBonesArmature::set_debug);
+	ClassDB::bind_method(D_METHOD("is_debug"), &DragonBonesArmature::is_debug);
+
 	ClassDB::bind_method(D_METHOD("get_ik_constraints"), &DragonBonesArmature::get_ik_constraints);
 	ClassDB::bind_method(D_METHOD("set_ik_constraint", "constraint_name", "new_position"), &DragonBonesArmature::set_ik_constraint);
 	ClassDB::bind_method(D_METHOD("set_ik_constraint_bend_positive", "constraint_name", "is_positive"), &DragonBonesArmature::set_ik_constraint_bend_positive);
+
 	ClassDB::bind_method(D_METHOD("get_bones"), &DragonBonesArmature::get_bones);
 	ClassDB::bind_method(D_METHOD("get_bone", "bone_name"), &DragonBonesArmature::get_bone);
 
@@ -51,12 +65,12 @@ void DragonBonesArmature::_bind_methods() {
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_IDLE);
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_MANUAL);
 
-	BIND_CONSTANT(FadeOut_None);
-	BIND_CONSTANT(FadeOut_SameLayer);
-	BIND_CONSTANT(FadeOut_SameGroup);
-	BIND_CONSTANT(FadeOut_SameLayerAndGroup);
-	BIND_CONSTANT(FadeOut_All);
-	BIND_CONSTANT(FadeOut_Single);
+	BIND_CONSTANT(FADE_OUT_NONE);
+	BIND_CONSTANT(FADE_OUT_SAME_LAYER);
+	BIND_CONSTANT(FADE_OUT_SAME_GROUP);
+	BIND_CONSTANT(FADE_OUT_SAME_LAYER_AND_GROUP);
+	BIND_CONSTANT(FADE_OUT_ALL);
+	BIND_CONSTANT(FADE_OUT_SINGLE);
 }
 
 bool DragonBonesArmature::is_frozen() {
@@ -71,12 +85,27 @@ void DragonBonesArmature::thaw() {
 	set_physics_process(true);
 }
 
-void DragonBonesArmature::set_debug(bool _b_debug) {
+void DragonBonesArmature::set_debug(bool _b_debug, bool p_recursively) {
 	if (!p_armature)
 		return;
-	for (auto slot : p_armature->getSlots()) {
+
+	b_debug = _b_debug;
+	for (Slot *slot : p_armature->getSlots()) {
 		if (!slot)
 			continue;
+
+		if (p_recursively) {
+			for (std::pair<void *, DisplayType> displayItem : slot->getDisplayList()) {
+				// propagate texture to child armature slots?
+				if (displayItem.second == DisplayType::Armature) {
+					// recurse your way on down there, you scamp
+					Armature *armature = static_cast<Armature *>(displayItem.first);
+					DragonBonesArmature *armatureDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
+
+					armatureDisplay->set_debug(_b_debug, p_recursively);
+				}
+			}
+		}
 
 		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
 			display->b_debug = _b_debug;
@@ -290,9 +319,7 @@ void DragonBonesArmature::set_slot_by_item_name(const String &_slot_name, const 
 }
 
 void DragonBonesArmature::set_all_slots_by_item_name(const String &_item_name) {
-	std::vector<Slot *> slots = getArmature()->getSlots();
-
-	for (Slot *slot : slots) {
+	for (Slot *slot : getArmature()->getSlots()) {
 		set_slot_by_item_name(String(slot->getName().c_str()), _item_name);
 	}
 }
@@ -435,18 +462,6 @@ Ref<DragonBonesBone> DragonBonesArmature::get_bone(const String &name) {
 	return _bones[name.ascii().get_data()];
 }
 
-void DragonBonesArmature::dispatch_event(const String &_str_type, const EventObject *_p_value) {
-	if (p_owner != nullptr) {
-		p_owner->dispatch_event(_str_type, _p_value);
-	}
-}
-
-void DragonBonesArmature::dispatch_snd_event(const String &_str_type, const EventObject *_p_value) {
-	if (p_owner != nullptr) {
-		p_owner->dispatch_snd_event(_str_type, _p_value);
-	}
-}
-
 Slot *DragonBonesArmature::getSlot(const std::string &name) const {
 	return p_armature->getSlot(name);
 }
@@ -470,11 +485,6 @@ void DragonBonesArmature::dbClear() {
 void DragonBonesArmature::dbUpdate() {
 }
 
-void DragonBonesArmature::dispatchDBEvent(const std::string &_type, EventObject *_value) {
-	if (p_owner)
-		p_owner->dispatch_event(String(_type.c_str()), _value);
-}
-
 void DragonBonesArmature::dispose(bool _disposeProxy) {
 	if (p_armature) {
 		p_armature->dispose();
@@ -482,28 +492,28 @@ void DragonBonesArmature::dispose(bool _disposeProxy) {
 	}
 }
 
-void DragonBonesArmature::add_parent_class(bool _b_debug, const Ref<Texture> &_m_texture_atlas) {
+void DragonBonesArmature::setup_recursively(bool _b_debug, const Ref<Texture> &_m_texture_atlas) {
 	if (!p_armature)
 		return;
-	auto arr = p_armature->getSlots();
 
-	for (auto item : arr) {
-		if (!item)
+	b_debug = _b_debug;
+	for (Slot *slot : p_armature->getSlots()) {
+		if (!slot)
 			continue;
 
-		if (auto display = static_cast<GDDisplay *>(item->getRawDisplay())) {
-			for (std::pair<void *, DisplayType> displayItem : item->getDisplayList()) {
-				// propagate texture to child armature slots?
-				if (displayItem.second == DisplayType::Armature) {
-					// recurse your way on down there, you scamp
-					Armature *armature = static_cast<Armature *>(displayItem.first);
-					DragonBonesArmature *armatureDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
+		for (std::pair<void *, DisplayType> displayItem : slot->getDisplayList()) {
+			// propagate texture to child armature slots?
+			if (displayItem.second == DisplayType::Armature) {
+				// recurse your way on down there, you scamp
+				Armature *armature = static_cast<Armature *>(displayItem.first);
+				DragonBonesArmature *armatureDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
 
-					armatureDisplay->p_owner = p_owner;
-					armatureDisplay->add_parent_class(b_debug, _m_texture_atlas);
-				}
+				armatureDisplay->p_owner = p_owner;
+				armatureDisplay->setup_recursively(b_debug, _m_texture_atlas);
 			}
+		}
 
+		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
 			add_child(display);
 			display->p_owner = this;
 			display->b_debug = _b_debug;
@@ -516,18 +526,17 @@ void DragonBonesArmature::update_childs(bool _b_color, bool _b_blending) {
 	if (!p_armature)
 		return;
 
-	auto arr = p_armature->getSlots();
-	for (auto item : arr) {
-		if (!item)
+	for (Slot *slot : p_armature->getSlots()) {
+		if (!slot)
 			continue;
 
 		if (_b_color)
-			item->_colorDirty = true;
+			slot->_colorDirty = true;
 
 		if (_b_blending)
-			item->invalidUpdate();
+			slot->invalidUpdate();
 
-		item->update(0);
+		slot->update(0);
 	}
 }
 
@@ -535,12 +544,11 @@ void DragonBonesArmature::update_material_inheritance(bool _b_inherit_material) 
 	if (!p_armature)
 		return;
 
-	auto arr = p_armature->getSlots();
-	for (auto item : arr) {
-		if (!item)
+	for (Slot *slot : p_armature->getSlots()) {
+		if (!slot)
 			continue;
 
-		if (auto display = static_cast<GDDisplay *>(item->getRawDisplay())) {
+		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
 			display->set_use_parent_material(_b_inherit_material);
 		}
 	}
@@ -550,11 +558,10 @@ void DragonBonesArmature::update_texture_atlas(const Ref<Texture> &_m_texture_at
 	if (!p_armature)
 		return;
 
-	auto arr = p_armature->getSlots();
-	for (auto item : arr) {
-		if (!item)
+	for (Slot *slot : p_armature->getSlots()) {
+		if (!slot)
 			continue;
-		if (auto display = static_cast<GDDisplay *>(item->getRawDisplay())) {
+		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
 			display->texture = _m_texture_atlas;
 			display->queue_redraw();
 		}

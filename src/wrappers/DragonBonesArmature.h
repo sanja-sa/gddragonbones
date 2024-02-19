@@ -19,12 +19,12 @@ public:
 	};
 
 	enum AnimFadeOutMode {
-		FadeOut_None,
-		FadeOut_SameLayer,
-		FadeOut_SameGroup,
-		FadeOut_SameLayerAndGroup,
-		FadeOut_All,
-		FadeOut_Single
+		FADE_OUT_NONE,
+		FADE_OUT_SAME_LAYER,
+		FADE_OUT_SAME_GROUP,
+		FADE_OUT_SAME_LAYER_AND_GROUP,
+		FADE_OUT_ALL,
+		FADE_OUT_SINGLE,
 	};
 
 private:
@@ -44,8 +44,17 @@ public:
 		update_childs(true);
 	}
 
-	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
-	virtual void dispatch_snd_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
+	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override {
+		if (p_owner) {
+			p_owner->dispatch_event(_str_type, _p_value);
+		}
+	}
+
+	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override {
+		if (p_owner) {
+			p_owner->dispatch_sound_event(_str_type, _p_value);
+		}
+	}
 
 	dragonBones::Slot *getSlot(const std::string &name) const;
 
@@ -57,7 +66,9 @@ public:
 	virtual bool hasDBEventListener(const std::string &_type) const override { return true; }
 	virtual void addDBEventListener(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_listener) override {}
 	virtual void removeDBEventListener(const std::string &_type, const std::function<void(dragonBones::EventObject *)> &_listener) override {}
-	virtual void dispatchDBEvent(const std::string &_type, dragonBones::EventObject *_value) override;
+	virtual void dispatchDBEvent(const std::string &_type, dragonBones::EventObject *_value) override {
+		this->dispatch_event(String(_type.c_str()), _value);
+	}
 
 	void dbInit(dragonBones::Armature *_p_armature) override;
 	void dbClear() override;
@@ -68,7 +79,7 @@ public:
 	virtual dragonBones::Armature *getArmature() const override { return p_armature; }
 	virtual dragonBones::Animation *getAnimation() const override { return p_armature->getAnimation(); }
 
-	void add_parent_class(bool _b_debug, const Ref<Texture> &_m_texture_atlas);
+	void setup_recursively(bool _b_debug, const Ref<Texture> &_m_texture_atlas);
 	void update_childs(bool _b_color, bool _b_blending = false);
 	void update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
 	void update_material_inheritance(bool _b_inherit_material);
@@ -83,7 +94,8 @@ public:
 	bool is_frozen();
 	void freeze();
 	void thaw();
-	void set_debug(bool _b_debug);
+	void set_debug(bool _b_debug, bool p_recursively = false);
+	bool is_debug() const { return b_debug; }
 
 	bool has_animation(const String &_animation_name);
 	Array get_animations();
