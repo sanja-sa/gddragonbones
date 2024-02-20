@@ -31,7 +31,14 @@ void Slot::_onClear()
 
     for (const auto& pair : disposeDisplayList)
     {
-		_disposeDisplay(pair.first, true);   
+        if (pair.second == DisplayType::Armature)
+        {
+            static_cast<Armature*>(pair.first)->returnToPool();
+        }
+        else
+        {
+            _disposeDisplay(pair.first, true);
+        }
     }
 
     if (_deformVertices != nullptr)

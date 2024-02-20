@@ -359,13 +359,17 @@ void BaseFactory::addDragonBonesData(DragonBonesData* data, const std::string& n
     const auto& mapName = !name.empty()? name : data->name;
     if (_dragonBonesDataMap.find(mapName) != _dragonBonesDataMap.cend())
     {
-        if (_dragonBonesDataMap[name] == data) 
-        {
-            return;
-        }
-
         DRAGONBONES_ASSERT(false, "Can not add same name data: " + name);
         return;
+    }
+
+    for (auto it = _dragonBonesDataMap.cbegin(); it != _dragonBonesDataMap.cend(); ++it)
+    {
+        if (it->second == data)
+        {
+            DRAGONBONES_ASSERT(false, "Can not add same data: " + name);
+            return;
+        }
     }
 
     _dragonBonesDataMap[mapName] = data;

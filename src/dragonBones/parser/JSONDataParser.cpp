@@ -1830,7 +1830,7 @@ DragonBonesData* JSONDataParser::_parseDragonBonesData(const rapidjson::Value& r
 {
     const auto& version = _getString(rawData, VERSION, "");
     const auto& compatibleVersion = _getString(rawData, COMPATIBLE_VERSION, "");
-	const auto &info = _getString(rawData, "info", "");
+    const auto& info = _getString(rawData, "info", "");
 
     if (
         indexOf(DATA_VERSIONS, version) >= 0 ||
@@ -1841,7 +1841,7 @@ DragonBonesData* JSONDataParser::_parseDragonBonesData(const rapidjson::Value& r
         data->version = version;
         data->name = _getString(rawData, NAME, "");
         data->frameRate = _getNumber(rawData, FRAME_RATE, 24);
-		data->info = info;
+        data->info = info;
 
         if (data->frameRate == 0) // Data error.
         {
