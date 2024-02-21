@@ -1,7 +1,6 @@
 #include "DragonBonesArmature.h"
 
 #include "GDDisplay.h"
-#include "GDMesh.h"
 
 #include "dragonBones/DragonBonesHeaders.h"
 #include "godot_cpp/classes/global_constants.hpp"
@@ -28,30 +27,32 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_animations"), &DragonBonesArmature::get_animations);
 
 	ClassDB::bind_method(D_METHOD("is_playing"), &DragonBonesArmature::is_playing);
-	ClassDB::bind_method(D_METHOD("play", "animation_name", "loop_count"), &DragonBonesArmature::play);
 
+	ClassDB::bind_method(D_METHOD("tell_animation", "animation_name"), &DragonBonesArmature::tell_animation);
+	ClassDB::bind_method(D_METHOD("seek_animation", "animation_name", "progress"), &DragonBonesArmature::seek_animation);
+
+	ClassDB::bind_method(D_METHOD("play", "animation_name", "loop_count"), &DragonBonesArmature::play);
 	ClassDB::bind_method(D_METHOD("play_from_time", "animation_name", "f_time", "loop_count"), &DragonBonesArmature::play_from_time);
 	ClassDB::bind_method(D_METHOD("play_from_progress", "animation_name", "f_progress", "loop_count"), &DragonBonesArmature::play_from_progress);
-
 	ClassDB::bind_method(D_METHOD("stop", "animation_name", "b_reset"), &DragonBonesArmature::stop);
 	ClassDB::bind_method(D_METHOD("stop_all_animations", "b_reset"), &DragonBonesArmature::stop_all_animations);
-
 	ClassDB::bind_method(D_METHOD("fade_in"), &DragonBonesArmature::fade_in);
+
+	ClassDB::bind_method(D_METHOD("reset", "recurisively"), &DragonBonesArmature::reset);
 
 	ClassDB::bind_method(D_METHOD("has_slot", "slot_name"), &DragonBonesArmature::has_slot);
 	ClassDB::bind_method(D_METHOD("get_slot", "slot_name"), &DragonBonesArmature::get_slot);
 	ClassDB::bind_method(D_METHOD("get_slots"), &DragonBonesArmature::get_slots);
 
-	ClassDB::bind_method(D_METHOD("reset", "recurisively"), &DragonBonesArmature::reset);
-
-	ClassDB::bind_method(D_METHOD("set_flip_x", "is_flipped"), &DragonBonesArmature::flip_x);
-	ClassDB::bind_method(D_METHOD("is_flipped_x"), &DragonBonesArmature::is_flipped_x);
-
-	ClassDB::bind_method(D_METHOD("set_flip_y", "is_flipped"), &DragonBonesArmature::flip_y);
-	ClassDB::bind_method(D_METHOD("is_flipped_y"), &DragonBonesArmature::is_flipped_y);
-
-	ClassDB::bind_method(D_METHOD("set_debug", "debug"), &DragonBonesArmature::set_debug);
-	ClassDB::bind_method(D_METHOD("is_debug"), &DragonBonesArmature::is_debug);
+	ClassDB::bind_method(D_METHOD("set_slot_display_index", "slot_name", "index"), &DragonBonesArmature::set_slot_display_index);
+	ClassDB::bind_method(D_METHOD("set_slot_by_item_name", "slot_name", "item_name"), &DragonBonesArmature::set_slot_by_item_name);
+	ClassDB::bind_method(D_METHOD("set_all_slots_by_item_name", "item_name"), &DragonBonesArmature::set_all_slots_by_item_name);
+	ClassDB::bind_method(D_METHOD("get_slot_display_index", "slot_name"), &DragonBonesArmature::get_slot_display_index);
+	ClassDB::bind_method(D_METHOD("get_total_items_in_slot", "slot_name"), &DragonBonesArmature::get_total_items_in_slot);
+	ClassDB::bind_method(D_METHOD("cycle_next_item_in_slot", "slot_name"), &DragonBonesArmature::cycle_next_item_in_slot);
+	ClassDB::bind_method(D_METHOD("cycle_previous_item_in_slot", "slot_name"), &DragonBonesArmature::cycle_previous_item_in_slot);
+	ClassDB::bind_method(D_METHOD("get_slot_display_color_multiplier", "slot_name"), &DragonBonesArmature::get_slot_display_color_multiplier);
+	ClassDB::bind_method(D_METHOD("set_slot_display_color_multiplier", "slot_name", "color"), &DragonBonesArmature::set_slot_display_color_multiplier);
 
 	ClassDB::bind_method(D_METHOD("get_ik_constraints"), &DragonBonesArmature::get_ik_constraints);
 	ClassDB::bind_method(D_METHOD("set_ik_constraint", "constraint_name", "new_position"), &DragonBonesArmature::set_ik_constraint);
@@ -60,14 +61,47 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bones"), &DragonBonesArmature::get_bones);
 	ClassDB::bind_method(D_METHOD("get_bone", "bone_name"), &DragonBonesArmature::get_bone);
 
-	ClassDB::bind_method(D_METHOD("set_active_", "active"), &DragonBonesArmature::set_active_);
+	ClassDB::bind_method(D_METHOD("advance", "delta", "recursively"), &DragonBonesArmature::get_bone, DEFVAL(false));
+
+	ClassDB::bind_method(D_METHOD("set_debug", "debug", "recursively"), &DragonBonesArmature::set_debug, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("set_active", "active", "recursively"), &DragonBonesArmature::set_active, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "callback_mode_process", "recursively"), &DragonBonesArmature::set_callback_mode_process, DEFVAL(false));
+
+	// Setter Getter
+	ClassDB::bind_method(D_METHOD("set_current_animation", "current_animation"), &DragonBonesArmature::set_current_animation);
+	ClassDB::bind_method(D_METHOD("get_current_animation"), &DragonBonesArmature::get_current_animation);
+
+	ClassDB::bind_method(D_METHOD("set_animation_progress", "progress"), &DragonBonesArmature::set_animation_progress);
+	ClassDB::bind_method(D_METHOD("get_animation_progress"), &DragonBonesArmature::get_animation_progress);
+
+	ClassDB::bind_method(D_METHOD("set_debug_", "debug"), &DragonBonesArmature::set_debug_);
+	ClassDB::bind_method(D_METHOD("is_debug"), &DragonBonesArmature::is_debug);
+
+	ClassDB::bind_method(D_METHOD("set_active_", "active"), &DragonBonesArmature::set_active_);
 	ClassDB::bind_method(D_METHOD("is_active"), &DragonBonesArmature::is_active);
 
-	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "callback_mode_process"), &DragonBonesArmature::set_callback_mode_process);
+	ClassDB::bind_method(D_METHOD("set_callback_mode_process_", "callback_mode_process"), &DragonBonesArmature::set_callback_mode_process_);
 	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &DragonBonesArmature::get_callback_mode_process);
 
+	ClassDB::bind_method(D_METHOD("set_flip_x_", "flip_x"), &DragonBonesArmature::flip_x_);
+	ClassDB::bind_method(D_METHOD("is_flipped_x"), &DragonBonesArmature::is_flipped_x);
+
+	ClassDB::bind_method(D_METHOD("set_flip_y_", "flip_y"), &DragonBonesArmature::flip_y_);
+	ClassDB::bind_method(D_METHOD("is_flipped_y"), &DragonBonesArmature::is_flipped_y);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), "set_debug_", "is_debug");
+
+	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "current_animation", PROPERTY_HINT_ENUM, "", PROPERTY_USAGE_EDITOR), "set_current_animation", "get_current_animation");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "animation_progress", PROPERTY_HINT_RANGE, "0.0,1.0,0.0001"), "set_animation_progress", "get_animation_progress");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active_", "is_active");
+
+	ADD_GROUP("Flip", "flip_");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_x"), "set_flip_x_", "is_flipped_x");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_y"), "set_flip_y_", "is_flipped_y");
+
+	ADD_GROUP("Callback Mode", "callback_mode_");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "callback_mode_process", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_callback_mode_process", "get_callback_mode_process");
+
 	// Enum
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS);
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_IDLE);
@@ -140,7 +174,7 @@ void DragonBonesArmature::set_debug(bool _b_debug, bool p_recursively) {
 	}
 }
 
-bool DragonBonesArmature::has_animation(const String &_animation_name) {
+bool DragonBonesArmature::has_animation(const String &_animation_name) const {
 	if (p_armature == nullptr || !getAnimation()) {
 		return false;
 	}
@@ -160,8 +194,34 @@ PackedStringArray DragonBonesArmature::get_animations() {
 	return animations;
 }
 
+void DragonBonesArmature::advance(float p_delta, bool p_recursively) {
+	if (p_armature) {
+		p_armature->advanceTime(p_delta);
+	}
+
+	if (p_recursively) {
+		for_each_armature([p_delta](DragonBonesArmature *p_child_armature) {
+			p_child_armature->advance(p_delta, true);
+		});
+	}
+}
+
+void DragonBonesArmature::set_current_animation(const String &p_animation) {
+	if (p_animation == "[none]" || p_animation.is_empty()) {
+		stop(get_current_animation());
+	} else if (!is_playing()) {
+		// TODO: 循环
+		play(p_animation);
+	} else if (get_current_animation() != p_animation) {
+		// TODO: 循环
+		play(p_animation);
+	} else {
+		// 相同动画，无需响应
+	}
+}
+
 String DragonBonesArmature::get_current_animation() const {
-	if (!getAnimation())
+	if (!p_armature || !getAnimation())
 		return {};
 	return getAnimation()->getLastAnimationName().c_str();
 }
@@ -196,11 +256,11 @@ String DragonBonesArmature::get_current_animation_in_group(const String &_group_
 	return {};
 }
 
-float DragonBonesArmature::tell_animation(const String &_animation_name) {
+float DragonBonesArmature::tell_animation(const String &_animation_name) const {
 	if (has_animation(_animation_name)) {
 		AnimationState *animation_state = getAnimation()->getState(_animation_name.ascii().get_data());
 		if (animation_state)
-			return animation_state->getCurrentTime() / animation_state->_duration;
+			return animation_state->getCurrentTime() / animation_state->getTotalTime();
 	}
 	return 0.0f;
 }
@@ -223,6 +283,7 @@ void DragonBonesArmature::play(const String &_animation_name, int loop) {
 	if (has_animation(_animation_name)) {
 		getAnimation()->play(_animation_name.ascii().get_data(), loop);
 	}
+	// TODO: 是否需要在没有动画时停止一切动画
 }
 
 void DragonBonesArmature::play_from_time(const String &_animation_name, float _f_time, int loop) {
@@ -419,21 +480,37 @@ void DragonBonesArmature::set_slot_display_color_multiplier(const String &_slot_
 	p_armature->getSlot(_slot_name.ascii().get_data())->_setColor(_new_color);
 }
 
-void DragonBonesArmature::flip_x(bool _b_flip) {
-	getArmature()->setFlipX(_b_flip);
+void DragonBonesArmature::flip_x(bool p_flip_x, bool p_recursively) {
+	getArmature()->setFlipX(p_flip_x);
 	getArmature()->advanceTime(0);
+	if (p_recursively) {
+		for_each_armature([p_flip_x](DragonBonesArmature *p_child_armature) {
+			p_child_armature->flip_x(p_flip_x, true);
+		});
+	}
 }
 
 bool DragonBonesArmature::is_flipped_x() const {
+	if (!p_armature) {
+		return false;
+	}
 	return getArmature()->getFlipX();
 }
 
-void DragonBonesArmature::flip_y(bool _b_flip) {
-	getArmature()->setFlipY(_b_flip);
+void DragonBonesArmature::flip_y(bool p_flip_y, bool p_recursively) {
+	getArmature()->setFlipY(p_flip_y);
 	getArmature()->advanceTime(0);
+	if (p_recursively) {
+		for_each_armature([p_flip_y](DragonBonesArmature *p_child_armature) {
+			p_child_armature->flip_y(p_flip_y, true);
+		});
+	}
 }
 
 bool DragonBonesArmature::is_flipped_y() const {
+	if (!p_armature) {
+		return false;
+	}
 	return getArmature()->getFlipY();
 }
 
@@ -601,7 +678,7 @@ void DragonBonesArmature::set_active(bool p_active, bool p_recursively) {
 	}
 }
 
-void DragonBonesArmature::set_callback_mode_process(AnimationCallbackModeProcess p_process_mode) {
+void DragonBonesArmature::set_callback_mode_process(AnimationCallbackModeProcess p_process_mode, bool p_recursively) {
 	if (callback_mode_process == p_process_mode)
 		return;
 
@@ -615,17 +692,32 @@ void DragonBonesArmature::set_callback_mode_process(AnimationCallbackModeProcess
 	if (was_active) {
 		set_active(true);
 	}
+
+	if (p_recursively) {
+		for_each_armature([p_process_mode](DragonBonesArmature *p_child_armature) {
+			p_child_armature->set_callback_mode_process(p_process_mode, true);
+		});
+	}
+}
+
+void DragonBonesArmature::set_animation_progress(float p_progress) {
+	seek_animation(get_current_animation(), p_progress);
+}
+
+float DragonBonesArmature::get_animation_progress() const {
+	return tell_animation(get_current_animation());
 }
 
 #ifdef TOOLS_ENABLED
 std::vector<DragonBonesArmature::StoragedProperty> DragonBonesArmature::storage_properties{};
+
 bool DragonBonesArmature::_set(const StringName &p_name, const Variant &p_val) {
 	if (p_name == SNAME("sub_armatures")) {
-		// 只读
 		return true;
 	}
 	return false;
 }
+
 bool DragonBonesArmature::_get(const StringName &p_name, Variant &r_val) const {
 	if (p_name == SNAME("sub_armatures")) {
 		TypedArray<DragonBonesArmatureProxy> ret;
@@ -649,6 +741,7 @@ bool DragonBonesArmature::_get(const StringName &p_name, Variant &r_val) const {
 	}
 	return false;
 }
+
 void DragonBonesArmature::_get_property_list(List<PropertyInfo> *p_list) const {
 	for (auto it : _slots) {
 		if (it.second.is_null()) {
@@ -661,6 +754,20 @@ void DragonBonesArmature::_get_property_list(List<PropertyInfo> *p_list) const {
 					PROPERTY_USAGE_EDITOR));
 			return;
 		}
+	}
+}
+
+void DragonBonesArmature::_validate_property(PropertyInfo &p_property) const {
+	if (!p_armature) {
+		return;
+	}
+	if (p_property.name == SNAME("current_animation")) {
+		String hint = "[none]";
+		for (const auto &anim : p_armature->getArmatureData()->getAnimationNames()) {
+			hint += ",";
+			hint += anim.c_str();
+		}
+		p_property.hint_string = hint;
 	}
 }
 

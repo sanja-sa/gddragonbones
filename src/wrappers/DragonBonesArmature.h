@@ -8,7 +8,9 @@
 
 namespace godot {
 
+// TODO: 独立材质控制
 // 是否播放动画要求Owner是否被processing
+// 同一个DragonBones中的Armature公用同一个时钟，不做特殊处理不能单独设置Armature的动画Speed
 class DragonBonesArmature : public GDDisplay, public dragonBones::IArmatureProxy {
 	GDCLASS(DragonBonesArmature, GDDisplay)
 public:
@@ -98,21 +100,18 @@ public:
 	/* METHOD BINDINGS */
 	static void _bind_methods();
 
-	void set_debug(bool _b_debug, bool p_recursively = false);
-	bool is_debug() const { return b_debug; }
-
-	bool has_animation(const String &_animation_name);
+	bool has_animation(const String &_animation_name) const;
 	PackedStringArray get_animations();
 
-	String get_current_animation() const;
 	String get_current_animation_on_layer(int _layer) const;
 	String get_current_animation_in_group(const String &_group_name) const;
 
-	float tell_animation(const String &_animation_name);
+	float tell_animation(const String &_animation_name) const;
 	void seek_animation(const String &_animation_name, float progress);
 
 	bool is_playing() const;
 	void play(const String &_animation_name, int loop = -1);
+
 	void play_from_time(const String &_animation_name, float _f_time, int loop = -1);
 	void play_from_progress(const String &_animation_name, float f_progress, int loop = -1);
 	void stop(const String &_animation_name, bool b_reset = false);
@@ -123,8 +122,9 @@ public:
 	void reset(bool p_recursively = false);
 
 	bool has_slot(const String &_slot_name) const;
-	Dictionary get_slots();
 	Ref<DragonBonesSlot> get_slot(const String &_slot_name);
+	Dictionary get_slots();
+
 	void set_slot_display_index(const String &_slot_name, int _index);
 	void set_slot_by_item_name(const String &_slot_name, const String &_item_name);
 	void set_all_slots_by_item_name(const String &_item_name);
@@ -135,11 +135,6 @@ public:
 	Color get_slot_display_color_multiplier(const String &_slot_name);
 	void set_slot_display_color_multiplier(const String &_slot_name, const Color &_color);
 
-	void flip_x(bool _b_flip);
-	bool is_flipped_x() const;
-	void flip_y(bool _b_flip);
-	bool is_flipped_y() const;
-
 	Dictionary get_ik_constraints();
 	void set_ik_constraint(const String &name, Vector2 position);
 	void set_ik_constraint_bend_positive(const String &name, bool bend_positive);
@@ -147,22 +142,40 @@ public:
 	Dictionary get_bones();
 	Ref<DragonBonesBone> get_bone(const String &name);
 
+	void advance(float p_delta, bool p_recursively = false);
+
+	// setget
+	void set_current_animation(const String &p_animation);
+	String get_current_animation() const;
+
+	void set_animation_progress(float p_progress);
+	float get_animation_progress() const;
+
+	void set_debug_(bool p_debug) { set_debug(p_debug); }
+	void set_debug(bool _b_debug, bool p_recursively = false);
+	bool is_debug() const { return b_debug; }
+
 	void set_active_(bool p_active) { set_active(p_active); }
 	void set_active(bool p_active, bool p_recursively = false);
 	bool is_active() const { return active; }
 
+	void set_callback_mode_process_(AnimationCallbackModeProcess p_process_mode) { set_callback_mode_process(p_process_mode); }
+	void set_callback_mode_process(AnimationCallbackModeProcess p_process_mode, bool p_recursively = false);
 	AnimationCallbackModeProcess get_callback_mode_process() const { return callback_mode_process; }
-	void set_callback_mode_process(AnimationCallbackModeProcess p_process_mode);
 
-	void advance(float p_time) {
-		if (p_armature) {
-			p_armature->advanceTime(p_time);
-		}
-	}
+	void flip_x_(bool p_flip_x) { flip_x(p_flip_x); }
+	void flip_x(bool p_flip_x, bool p_recursively = false);
+	bool is_flipped_x() const;
 
+	void flip_y_(bool p_flip_y) { flip_y(p_flip_y); }
+	void flip_y(bool p_flip_y, bool p_recursively = false);
+	bool is_flipped_y() const;
+
+public:
 	void set_settings(const Dictionary &p_setting);
 #ifdef TOOLS_ENABLED
 	Dictionary get_settings() const;
+
 #endif // TOOLS_ENABLED
 
 protected:
@@ -174,6 +187,8 @@ protected:
 		Variant default_value;
 	};
 	static std::vector<StoragedProperty> storage_properties;
+
+	void _validate_property(PropertyInfo &p_property) const;
 	bool _set(const StringName &p_name, const Variant &p_val);
 	bool _get(const StringName &p_name, Variant &r_val) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
