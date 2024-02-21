@@ -5,6 +5,8 @@
 #include "wrappers/DragonBonesArmature.h"
 #include "wrappers/GDDisplay.h"
 
+#define COMPATIBILITY_ENABLED
+
 namespace godot {
 
 /// TODO: 对所有的armature进行操作
@@ -40,20 +42,20 @@ private:
 	bool b_debug{ false };
 	bool b_inited{ false };
 	bool b_try_playing{ false };
+
 	bool b_flip_x{ false };
 	bool b_flip_y{ false };
+#ifdef COMPATIBILITY_ENABLED
+#endif // COMPATIBILITY_ENABLED
 
 	bool b_inherit_child_material{ true };
 
 protected:
-	void _notification(int _what);
 	static void _bind_methods();
 
 	bool _set(const StringName &_str_name, const Variant &_c_r_value);
 	bool _get(const StringName &_str_name, Variant &_r_ret) const;
 	void _get_property_list(List<PropertyInfo> *_p_list) const;
-
-	void _set_process(bool p_process, bool p_force = false);
 
 public:
 	DragonBones() = default;
@@ -68,8 +70,8 @@ public:
 	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 
 	// setters/getters
-	void set_resource(const Ref<DragonBonesFactory> &_p_data);
-	Ref<DragonBonesFactory> get_resource() const;
+	void set_factory(const Ref<DragonBonesFactory> &_p_data);
+	Ref<DragonBonesFactory> get_factory() const;
 
 	void set_inherit_material(bool _b_enable);
 	bool is_material_inherited() const;
@@ -77,14 +79,17 @@ public:
 	void set_active(bool _b_active);
 	bool is_active() const;
 
-	void set_speed(float _f_speed);
-	float get_speed() const;
+	void set_speed_scale(float _f_speed);
+	float get_speed_scale() const;
 
 	void set_texture(const Ref<Texture2D> &_p_texture);
 	Ref<Texture2D> get_texture() const;
 
 	void set_callback_mode_process(DragonBonesArmature::AnimationCallbackModeProcess _mode);
 	DragonBonesArmature::AnimationCallbackModeProcess get_callback_mode_process() const;
+
+	int get_animation_loop() const;
+	void set_animation_loop(int p_animation_loop);
 
 	void advance(float p_delta) {
 		if (p_instance) {
@@ -95,10 +100,11 @@ public:
 	void set_debug(bool _b_debug);
 	bool is_debug() const;
 
-	/* deprecated */ void flip_x(bool _b_flip);
+	/* deprecated */ void set_flip_x(bool _b_flip);
 	/* deprecated */ bool is_fliped_x() const;
-	/* deprecated */ void flip_y(bool _b_flip);
+	/* deprecated */ void set_flip_y(bool _b_flip);
 	/* deprecated */ bool is_fliped_y() const;
+
 #ifdef COMPATIBILITY_ENABLED
 	/**
 		THESE DEPRECATED FUNCTIONS WILL BE REMOVED IN VERSION 3.2.53
@@ -131,6 +137,7 @@ public:
 	/* deprecated */ void stop(bool _b_all = false);
 	/* deprecated */ inline void stop_all() { stop(true); }
 #endif
+
 	DragonBonesArmature *get_armature();
 
 private:
@@ -138,6 +145,7 @@ private:
 
 	void set_armature_settings(const Dictionary &p_settings) const;
 	Dictionary get_armature_settings() const;
+
 #ifdef TOOLS_ENABLED
 	mutable Ref<DragonBonesArmatureProxy> main_armature_ref;
 #endif // TOOLS_ENABLED
