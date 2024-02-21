@@ -2,11 +2,15 @@
 
 #include "GDDisplay.h"
 #include "GDMesh.h"
+
 #include "dragonBones/DragonBonesHeaders.h"
-#include "godot_cpp/variant/utility_functions.hpp"
+#include "godot_cpp/classes/global_constants.hpp"
+#include "godot_cpp/classes/ref.hpp"
 
 using namespace godot;
 using namespace dragonBones;
+
+#define SNAME(sn) ([] {static const StringName ret{sn};return ret; }())
 
 DragonBonesArmature::DragonBonesArmature() {
 	set_use_parent_material(true);
@@ -56,6 +60,14 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bones"), &DragonBonesArmature::get_bones);
 	ClassDB::bind_method(D_METHOD("get_bone", "bone_name"), &DragonBonesArmature::get_bone);
 
+	ClassDB::bind_method(D_METHOD("set_active_", "active"), &DragonBonesArmature::set_active_);
+	ClassDB::bind_method(D_METHOD("set_active", "active", "recursively"), &DragonBonesArmature::set_active, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("is_active"), &DragonBonesArmature::is_active);
+
+	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "callback_mode_process"), &DragonBonesArmature::set_callback_mode_process);
+	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &DragonBonesArmature::get_callback_mode_process);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active_", "is_active");
 	// Enum
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS);
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_IDLE);
@@ -67,6 +79,23 @@ void DragonBonesArmature::_bind_methods() {
 	BIND_CONSTANT(FADE_OUT_SAME_LAYER_AND_GROUP);
 	BIND_CONSTANT(FADE_OUT_ALL);
 	BIND_CONSTANT(FADE_OUT_SINGLE);
+
+#ifdef TOOLS_ENABLED
+	auto props = ClassDB::class_get_property_list(get_class_static());
+	auto tmp_obj = memnew(DragonBonesArmature);
+	for (size_t i = 0; i < props.size(); ++i) {
+		Dictionary prop = props[i];
+		if ((uint32_t)prop["usage"] & PROPERTY_USAGE_STORAGE) {
+			storage_properties.emplace_back(StoragedProperty{ prop["name"], tmp_obj->get(prop["name"]) });
+
+			DragonBonesArmatureProxy::armature_property_list.emplace_back(PropertyInfo(
+					(Variant::Type)((int)prop["type"]), (StringName)prop["name"], (PropertyHint)((int)prop["hint"]),
+					(String)prop["hint_string"], PROPERTY_USAGE_EDITOR, (StringName)prop["class"]));
+		}
+	}
+
+	memdelete(tmp_obj);
+#endif // TOOLS_ENABLED
 }
 
 template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy>
@@ -119,8 +148,8 @@ bool DragonBonesArmature::has_animation(const String &_animation_name) {
 	return getArmature()->getArmatureData()->getAnimation(_animation_name.ascii().get_data()) != nullptr;
 }
 
-Array DragonBonesArmature::get_animations() {
-	Array animations{};
+PackedStringArray DragonBonesArmature::get_animations() {
+	PackedStringArray animations{};
 
 	const ArmatureData *data = p_armature->getArmatureData();
 
@@ -556,3 +585,228 @@ void DragonBonesArmature::update_texture_atlas(const Ref<Texture> &_m_texture_at
 		}
 	}
 }
+
+//
+void DragonBonesArmature::set_active(bool p_active, bool p_recursively) {
+	if (active == p_active)
+		return;
+	active = p_active;
+
+	_set_process(processing, true);
+
+	if (p_recursively) {
+		for_each_armature([p_active](DragonBonesArmature *p_child_armature) {
+			p_child_armature->set_active(p_active, true);
+		});
+	}
+}
+
+void DragonBonesArmature::set_callback_mode_process(AnimationCallbackModeProcess p_process_mode) {
+	if (callback_mode_process == p_process_mode)
+		return;
+
+	bool was_active = is_active();
+	if (was_active) {
+		set_active(false);
+	}
+
+	callback_mode_process = p_process_mode;
+
+	if (was_active) {
+		set_active(true);
+	}
+}
+
+#ifdef TOOLS_ENABLED
+std::vector<DragonBonesArmature::StoragedProperty> DragonBonesArmature::storage_properties{};
+bool DragonBonesArmature::_set(const StringName &p_name, const Variant &p_val) {
+	if (p_name == SNAME("sub_armatures")) {
+		// 只读
+		return true;
+	}
+	return false;
+}
+bool DragonBonesArmature::_get(const StringName &p_name, Variant &r_val) const {
+	if (p_name == SNAME("sub_armatures")) {
+		TypedArray<DragonBonesArmatureProxy> ret;
+
+		for (auto it : _slots) {
+			if (it.second.is_null()) {
+				continue;
+			}
+
+			auto sub_armature = it.second->get_child_armature();
+			if (!sub_armature) {
+				continue;
+			}
+
+			Ref<DragonBonesArmatureProxy> proxy{ memnew(DragonBonesArmatureProxy(sub_armature)) };
+			ret.push_back(proxy);
+		}
+
+		r_val = ret;
+		return true;
+	}
+	return false;
+}
+void DragonBonesArmature::_get_property_list(List<PropertyInfo> *p_list) const {
+	for (auto it : _slots) {
+		if (it.second.is_null()) {
+			continue;
+		}
+
+		if (it.second->get_child_armature()) {
+			p_list->push_back(PropertyInfo(Variant::ARRAY, SNAME("sub_armatures"),
+					PROPERTY_HINT_TYPE_STRING, vformat("%d/%d:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, DragonBonesArmatureProxy::get_class_static()),
+					PROPERTY_USAGE_EDITOR));
+			return;
+		}
+	}
+}
+
+#endif // TOOLS_ENABLED
+
+void DragonBonesArmature::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			if (!processing) {
+				set_physics_process_internal(false);
+				set_process_internal(false);
+			}
+		} break;
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			if (active && callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
+				advance(get_process_delta_time());
+		} break;
+
+		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
+			if (active && callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
+				advance(get_physics_process_delta_time());
+		} break;
+	}
+}
+
+void DragonBonesArmature::_set_process(bool p_process, bool p_force) {
+	if (processing == p_process && !p_force) {
+		return;
+	}
+
+	set_physics_process_internal(callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS && p_process && active);
+	set_process_internal(callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE && p_process && active);
+
+	processing = p_process;
+}
+
+void DragonBonesArmature::set_settings(const Dictionary &p_settings) {
+	auto keys = p_settings.keys();
+	auto values = p_settings.values();
+	for (size_t i = 0; i < keys.size(); ++i) {
+		const String key = keys[i];
+		if (key != "sub_armatures") {
+			set(key, values[i]);
+		} else {
+			Dictionary sub_armatures_setting = values[i];
+			auto slot_names = sub_armatures_setting.keys();
+			auto slot_settings = sub_armatures_setting.values();
+
+			for (size_t j = 0; j < slot_names.size(); ++i) {
+				const String &slot_name = slot_names[i];
+				const Dictionary &armature_settings = slot_settings[i];
+				auto it = _slots.find(slot_name.ascii().get_data());
+				if (it == _slots.end()) {
+					continue;
+				}
+				ERR_CONTINUE(it->second.is_null());
+
+				auto child_armature = it->second->get_child_armature();
+				if (child_armature) {
+					child_armature->set_settings(armature_settings);
+				}
+			}
+		}
+	}
+}
+
+#ifdef TOOLS_ENABLED
+Dictionary DragonBonesArmature::get_settings() const {
+	Dictionary ret;
+	for (const auto &prop_info : storage_properties) {
+		Variant val = get(prop_info.name);
+		if (val != prop_info.default_value) {
+			ret[prop_info.name] = val;
+		}
+	}
+
+	Dictionary sub_armatures_setting;
+	ret["sub_armatures"] = sub_armatures_setting;
+
+	for (auto kv : _slots) {
+		const auto &slot_name = kv.first;
+		const auto &slot = kv.second;
+		if (slot.is_null()) {
+			continue;
+		}
+		auto sub_armature = slot->get_child_armature();
+		if (sub_armature) {
+			sub_armatures_setting[slot_name.c_str()] = sub_armature->get_settings();
+		}
+	}
+
+	return ret;
+}
+#endif //  TOOLS_ENABLED
+////////////
+#ifdef TOOLS_ENABLED
+std::vector<PropertyInfo> DragonBonesArmatureProxy::armature_property_list{};
+
+bool DragonBonesArmatureProxy::_set(const StringName &p_name, const Variant &p_val) {
+	if (!armature_node) {
+		return false;
+	}
+
+	if (p_name == SNAME("armature_name")) {
+		return true;
+	}
+
+	for (const auto &prop_info : armature_property_list) {
+		if (prop_info.name == p_name) {
+			armature_node->set(p_name, p_val);
+			notify_property_list_changed();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool DragonBonesArmatureProxy::_get(const StringName &p_name, Variant &r_val) const {
+	if (!armature_node) {
+		return false;
+	}
+
+	if (p_name == SNAME("armature_name")) {
+		r_val = static_cast<DragonBonesArmature *>(armature_node)->getArmature()->getName().c_str();
+		return true;
+	}
+
+	for (const auto &prop_info : armature_property_list) {
+		if (prop_info.name == p_name) {
+			r_val = armature_node->get(p_name);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void DragonBonesArmatureProxy::_get_property_list(List<PropertyInfo> *p_list) const {
+	if (!armature_node) {
+		return;
+	}
+
+	for (const auto &p : armature_property_list) {
+		p_list->push_back(p);
+	}
+}
+
+#endif // TOOLS_ENABLED

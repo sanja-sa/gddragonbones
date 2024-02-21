@@ -4,14 +4,13 @@
 #include "GDDisplay.h"
 #include "dragonBones/armature/Armature.h"
 #include "dragonBones/armature/IArmatureProxy.h"
-#include "dragonBones/model/DisplayData.h"
 #include "wrappers/DragonBonesSlot.h"
 
 namespace godot {
 
 // 是否播放动画要求Owner是否被processing
-class DragonBonesArmature : public GDDisplay, virtual public dragonBones::IArmatureProxy {
-	GDCLASS(DragonBonesArmature, Node2D)
+class DragonBonesArmature : public GDDisplay, public dragonBones::IArmatureProxy {
+	GDCLASS(DragonBonesArmature, GDDisplay)
 public:
 	enum AnimationCallbackModeProcess {
 		ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS = 0,
@@ -31,6 +30,12 @@ public:
 private:
 	template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy = nullptr>
 	void for_each_armature(Func &&p_action);
+
+	AnimationCallbackModeProcess callback_mode_process{ ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
+	bool active{ true };
+	bool processing{ false };
+
+	operator dragonBones::IArmatureProxy *() { return static_cast<dragonBones::IArmatureProxy *>(this); }
 
 protected:
 	dragonBones::Armature *p_armature{ nullptr };
@@ -97,7 +102,7 @@ public:
 	bool is_debug() const { return b_debug; }
 
 	bool has_animation(const String &_animation_name);
-	Array get_animations();
+	PackedStringArray get_animations();
 
 	String get_current_animation() const;
 	String get_current_animation_on_layer(int _layer) const;
@@ -141,7 +146,66 @@ public:
 
 	Dictionary get_bones();
 	Ref<DragonBonesBone> get_bone(const String &name);
+
+	void set_active_(bool p_active) { set_active(p_active); }
+	void set_active(bool p_active, bool p_recursively = false);
+	bool is_active() const { return active; }
+
+	AnimationCallbackModeProcess get_callback_mode_process() const { return callback_mode_process; }
+	void set_callback_mode_process(AnimationCallbackModeProcess p_process_mode);
+
+	void advance(float p_time) {
+		if (p_armature) {
+			p_armature->advanceTime(p_time);
+		}
+	}
+
+	void set_settings(const Dictionary &p_setting);
+#ifdef TOOLS_ENABLED
+	Dictionary get_settings() const;
+#endif // TOOLS_ENABLED
+
+protected:
+	void _notification(int p_what);
+
+#ifdef TOOLS_ENABLED
+	struct StoragedProperty {
+		StringName name;
+		Variant default_value;
+	};
+	static std::vector<StoragedProperty> storage_properties;
+	bool _set(const StringName &p_name, const Variant &p_val);
+	bool _get(const StringName &p_name, Variant &r_val) const;
+	void _get_property_list(List<PropertyInfo> *p_list) const;
+#endif // TOOLS_ENABLED
+
+private:
+	void _set_process(bool p_process, bool p_force);
 };
+
+#ifdef TOOLS_ENABLED
+class DragonBonesArmatureProxy : public Resource {
+	GDCLASS(DragonBonesArmatureProxy, Resource)
+protected:
+	static void _bind_methods() {}
+
+	bool _set(const StringName &p_name, const Variant &p_val);
+	bool _get(const StringName &p_name, Variant &r_val) const;
+	void _get_property_list(List<PropertyInfo> *p_list) const;
+
+public:
+	DragonBonesArmatureProxy() = default;
+	DragonBonesArmatureProxy(Node *p_armature_node) :
+			armature_node(p_armature_node) {}
+
+private:
+	static std::vector<PropertyInfo> armature_property_list;
+	friend class DragonBonesArmature;
+
+	Node *armature_node{ nullptr };
+	friend class DragonBones;
+};
+#endif // TOOLS_ENABLED
 
 } //namespace godot
 

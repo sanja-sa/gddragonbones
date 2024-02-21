@@ -103,7 +103,7 @@ void DragonBones::_on_resource_changed() {
 	set_resource(to_set);
 }
 
-void DragonBones::set_resource(Ref<DragonBonesFactory> _p_data) {
+void DragonBones::set_resource(const Ref<DragonBonesFactory> &_p_data) {
 	using namespace dragonBones;
 	if (m_res == _p_data)
 		return;
@@ -175,7 +175,7 @@ void DragonBones::set_resource(Ref<DragonBonesFactory> _p_data) {
 	_set_process(true);
 }
 
-Ref<DragonBonesFactory> DragonBones::get_resource() {
+Ref<DragonBonesFactory> DragonBones::get_resource() const {
 	return m_res;
 }
 
@@ -221,7 +221,7 @@ float DragonBones::get_speed() const {
 	return f_speed;
 }
 
-void DragonBones::set_animation_process_mode(DragonBonesArmature::AnimationCallbackModeProcess _mode) {
+void DragonBones::set_callback_mode_process(DragonBonesArmature::AnimationCallbackModeProcess _mode) {
 	if (callback_mode_process == _mode)
 		return;
 
@@ -237,7 +237,7 @@ void DragonBones::set_animation_process_mode(DragonBonesArmature::AnimationCallb
 	}
 }
 
-DragonBonesArmature::AnimationCallbackModeProcess DragonBones::get_animation_process_mode() const {
+DragonBonesArmature::AnimationCallbackModeProcess DragonBones::get_callback_mode_process() const {
 	return callback_mode_process;
 }
 
@@ -275,21 +275,6 @@ void DragonBones::_notification(int _what) {
 void DragonBones::_reset() {
 	ERR_FAIL_NULL(p_armature);
 	p_armature->reset(true);
-}
-
-const dragonBones::DragonBonesData *DragonBones::get_dragonbones_data() const {
-	const dragonBones::DragonBonesData *data = this->p_armature->getArmature()->getArmatureData()->getParent();
-	return data;
-}
-
-dragonBones::ArmatureData *DragonBones::get_armature_data(const String &_armature_name) {
-	auto it = get_dragonbones_data()->armatures.find(_armature_name.ascii().get_data());
-
-	if (it == get_dragonbones_data()->armatures.end()) {
-		return nullptr;
-	}
-
-	return it->second;
 }
 
 DragonBonesArmature *DragonBones::get_armature() {
@@ -539,6 +524,22 @@ Ref<Texture2D> DragonBones::get_texture() const {
 	return m_texture_atlas;
 }
 
+void DragonBones::set_armature_settings(const Dictionary &p_settings) const {
+	ERR_FAIL_NULL(p_armature);
+	p_armature->set_settings(p_settings);
+}
+
+Dictionary DragonBones::get_armature_settings() const {
+	if (!p_armature) {
+		return {};
+	}
+#ifdef TOOLS_ENABLED
+	return p_armature->get_settings();
+#else //TOOLS_ENABLED
+	ERR_FAIL_V_MSG({}, "DragonBones::get_armature_settings() can be call in editor build only.");
+#endif // TOOLS_ENABLED
+}
+
 bool DragonBones::_set(const StringName &_str_name, const Variant &_c_r_value) {
 	if (_str_name == SNAME("playback/curr_animation")) {
 		if (str_curr_anim == _c_r_value)
@@ -567,7 +568,15 @@ bool DragonBones::_set(const StringName &_str_name, const Variant &_c_r_value) {
 	} else if (_str_name == SNAME("playback/progress")) {
 		p_armature->seek_animation(str_curr_anim, _c_r_value);
 		return true;
+	} else if (_str_name == SNAME("armature_settings")) {
+		set_armature_settings(_c_r_value);
+		return true;
 	}
+#ifdef TOOLS_ENABLED
+	else if (_str_name == SNAME("main_armature")) {
+		return true; // 禁止设置
+	}
+#endif //  TOOLS_ENABLED
 
 	return false;
 }
@@ -582,9 +591,56 @@ bool DragonBones::_get(const StringName &_str_name, Variant &_r_ret) const {
 	} else if (_str_name == SNAME("playback/progress")) {
 		_r_ret = f_progress;
 		return true;
+	} else if (_str_name == SNAME("armature_settings")) {
+		_r_ret = get_armature_settings();
+		return true;
 	}
+#ifdef TOOLS_ENABLED
+	else if (_str_name == SNAME("main_armature")) {
+		_r_ret = main_armature_ref;
+		return true;
+	}
+#endif // TOOLS_ENABLED
 	return false;
 }
+
+void DragonBones::_get_property_list(List<PropertyInfo> *_p_list) const {
+	List<String> __l_names;
+
+	if (b_inited && p_armature->getAnimation()) {
+		auto __names = p_armature->getAnimation()->getAnimationNames();
+		auto __it = __names.cbegin();
+		while (__it != __names.cend()) {
+			__l_names.push_back(__it->c_str());
+			++__it;
+		}
+	}
+
+	__l_names.sort();
+	__l_names.push_front("[none]");
+	String __str_hint;
+	for (List<String>::Element *__p_E = __l_names.front(); __p_E; __p_E = __p_E->next()) {
+		if (__p_E != __l_names.front())
+			__str_hint += ",";
+		__str_hint += __p_E->get();
+	}
+
+	_p_list->push_back(PropertyInfo(Variant::STRING, "playback/curr_animation", PROPERTY_HINT_ENUM, __str_hint));
+	_p_list->push_back(PropertyInfo(Variant::INT, "playback/loop", PROPERTY_HINT_RANGE, "-1,100,1"));
+
+	_p_list->push_back(PropertyInfo(Variant::DICTIONARY, "armature_settings", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
+#ifdef TOOLS_ENABLED
+	if (p_armature && Engine::get_singleton()->is_editor_hint()) {
+		if (main_armature_ref.is_null()) {
+			main_armature_ref.instantiate();
+		}
+		main_armature_ref->armature_node = p_armature;
+		_p_list->push_back(PropertyInfo(
+				Variant::OBJECT, "main_armature", PROPERTY_HINT_RESOURCE_TYPE, DragonBonesArmatureProxy::get_class_static(), PROPERTY_USAGE_EDITOR, DragonBonesArmatureProxy::get_class_static()));
+	}
+#endif // TOOLS_ENABLED
+}
+
 void DragonBones::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &DragonBones::set_texture);
 	ClassDB::bind_method(D_METHOD("get_texture"), &DragonBones::get_texture);
@@ -659,8 +715,8 @@ void DragonBones::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_debug", "debug"), &DragonBones::set_debug);
 	ClassDB::bind_method(D_METHOD("is_debug"), &DragonBones::is_debug);
 
-	ClassDB::bind_method(D_METHOD("set_animation_process_mode", "mode"), &DragonBones::set_animation_process_mode);
-	ClassDB::bind_method(D_METHOD("get_animation_process_mode"), &DragonBones::get_animation_process_mode);
+	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "mode"), &DragonBones::set_callback_mode_process);
+	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &DragonBones::get_callback_mode_process);
 
 	// This is how we set top level properties
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), "set_texture", "get_texture");
@@ -671,7 +727,7 @@ void DragonBones::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, DragonBonesFactory::get_class_static()), "set_resource", "get_resource");
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "playback/process_mode", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_animation_process_mode", "get_animation_process_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "playback/process_mode", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_callback_mode_process", "get_callback_mode_process");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "playback/speed", PROPERTY_HINT_RANGE, "-10,10,0.01"), "set_speed", "get_speed");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "childs_use_this_material"), "set_inherit_material", "is_material_inherited");
@@ -685,29 +741,4 @@ void DragonBones::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("dragon_fade_in_complete", PropertyInfo(Variant::STRING, "anim")));
 	ADD_SIGNAL(MethodInfo("dragon_fade_out", PropertyInfo(Variant::STRING, "anim")));
 	ADD_SIGNAL(MethodInfo("dragon_fade_out_complete", PropertyInfo(Variant::STRING, "anim")));
-}
-
-void DragonBones::_get_property_list(List<PropertyInfo> *_p_list) const {
-	List<String> __l_names;
-
-	if (b_inited && p_armature->getAnimation()) {
-		auto __names = p_armature->getAnimation()->getAnimationNames();
-		auto __it = __names.cbegin();
-		while (__it != __names.cend()) {
-			__l_names.push_back(__it->c_str());
-			++__it;
-		}
-	}
-
-	__l_names.sort();
-	__l_names.push_front("[none]");
-	String __str_hint;
-	for (List<String>::Element *__p_E = __l_names.front(); __p_E; __p_E = __p_E->next()) {
-		if (__p_E != __l_names.front())
-			__str_hint += ",";
-		__str_hint += __p_E->get();
-	}
-
-	_p_list->push_back(PropertyInfo(Variant::STRING, "playback/curr_animation", PROPERTY_HINT_ENUM, __str_hint));
-	_p_list->push_back(PropertyInfo(Variant::INT, "playback/loop", PROPERTY_HINT_RANGE, "-1,100,1"));
 }

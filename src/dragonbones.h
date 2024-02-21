@@ -68,8 +68,8 @@ public:
 	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 
 	// setters/getters
-	void set_resource(Ref<DragonBonesFactory> _p_data);
-	Ref<DragonBonesFactory> get_resource();
+	void set_resource(const Ref<DragonBonesFactory> &_p_data);
+	Ref<DragonBonesFactory> get_resource() const;
 
 	void set_inherit_material(bool _b_enable);
 	bool is_material_inherited() const;
@@ -83,8 +83,8 @@ public:
 	void set_texture(const Ref<Texture2D> &_p_texture);
 	Ref<Texture2D> get_texture() const;
 
-	void set_animation_process_mode(DragonBonesArmature::AnimationCallbackModeProcess _mode);
-	DragonBonesArmature::AnimationCallbackModeProcess get_animation_process_mode() const;
+	void set_callback_mode_process(DragonBonesArmature::AnimationCallbackModeProcess _mode);
+	DragonBonesArmature::AnimationCallbackModeProcess get_callback_mode_process() const;
 
 	void advance(float p_delta) {
 		if (p_instance) {
@@ -134,10 +134,13 @@ public:
 	DragonBonesArmature *get_armature();
 
 private:
-	const dragonBones::DragonBonesData *get_dragonbones_data() const;
-	dragonBones::ArmatureData *get_armature_data(const String &_armature_name);
-
 	void _on_resource_changed();
+
+	void set_armature_settings(const Dictionary &p_settings) const;
+	Dictionary get_armature_settings() const;
+#ifdef TOOLS_ENABLED
+	mutable Ref<DragonBonesArmatureProxy> main_armature_ref;
+#endif // TOOLS_ENABLED
 };
 
 } //namespace godot
