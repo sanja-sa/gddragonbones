@@ -20,7 +20,7 @@ private:
 	GDDisplay(const GDDisplay &);
 
 public:
-	Ref<Texture> texture;
+	Ref<Texture2D> texture;
 	GDOwnerNode *p_owner{ nullptr };
 	bool b_debug{ false };
 
