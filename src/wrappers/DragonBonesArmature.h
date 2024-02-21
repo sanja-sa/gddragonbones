@@ -9,6 +9,7 @@
 
 namespace godot {
 
+// 是否播放动画要求Owner是否被processing
 class DragonBonesArmature : public GDDisplay, virtual public dragonBones::IArmatureProxy {
 	GDCLASS(DragonBonesArmature, Node2D)
 public:
@@ -28,7 +29,8 @@ public:
 	};
 
 private:
-	DragonBonesArmature(const DragonBonesArmature &);
+	template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy = nullptr>
+	void for_each_armature(Func &&p_action);
 
 protected:
 	dragonBones::Armature *p_armature{ nullptr };
@@ -91,9 +93,6 @@ public:
 	/* METHOD BINDINGS */
 	static void _bind_methods();
 
-	bool is_frozen();
-	void freeze();
-	void thaw();
 	void set_debug(bool _b_debug, bool p_recursively = false);
 	bool is_debug() const { return b_debug; }
 
@@ -116,7 +115,7 @@ public:
 	void fade_in(const String &_animation_name, float _time,
 			int _loop, int _layer, const String &_group, DragonBonesArmature::AnimFadeOutMode _fade_out_mode);
 
-	void reset();
+	void reset(bool p_recursively = false);
 
 	bool has_slot(const String &_slot_name) const;
 	Dictionary get_slots();

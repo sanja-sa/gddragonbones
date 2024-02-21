@@ -20,10 +20,6 @@ DragonBonesArmature::~DragonBonesArmature() {
 
 void DragonBonesArmature::_bind_methods() {
 	// TODO:: 属性
-	ClassDB::bind_method(D_METHOD("is_frozen"), &DragonBonesArmature::is_frozen);
-	ClassDB::bind_method(D_METHOD("freeze"), &DragonBonesArmature::freeze);
-	ClassDB::bind_method(D_METHOD("thaw"), &DragonBonesArmature::thaw);
-
 	ClassDB::bind_method(D_METHOD("has_animation", "animation_name"), &DragonBonesArmature::has_animation);
 	ClassDB::bind_method(D_METHOD("get_animations"), &DragonBonesArmature::get_animations);
 
@@ -42,7 +38,7 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_slot", "slot_name"), &DragonBonesArmature::get_slot);
 	ClassDB::bind_method(D_METHOD("get_slots"), &DragonBonesArmature::get_slots);
 
-	ClassDB::bind_method(D_METHOD("reset"), &DragonBonesArmature::reset);
+	ClassDB::bind_method(D_METHOD("reset", "recurisively"), &DragonBonesArmature::reset);
 
 	ClassDB::bind_method(D_METHOD("set_flip_x", "is_flipped"), &DragonBonesArmature::flip_x);
 	ClassDB::bind_method(D_METHOD("is_flipped_x"), &DragonBonesArmature::is_flipped_x);
@@ -73,16 +69,24 @@ void DragonBonesArmature::_bind_methods() {
 	BIND_CONSTANT(FADE_OUT_SINGLE);
 }
 
-bool DragonBonesArmature::is_frozen() {
-	return !is_physics_processing();
-}
-
-void DragonBonesArmature::freeze() {
-	set_physics_process(false);
-}
-
-void DragonBonesArmature::thaw() {
-	set_physics_process(true);
+template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy>
+void DragonBonesArmature::for_each_armature(Func &&p_action) {
+	for (auto slot : getArmature()->getSlots()) {
+		if (slot->getDisplayList().size() == 0)
+			continue;
+		auto display = slot->getDisplayList()[slot->getDisplayIndex()];
+		if (display.second == dragonBones::DisplayType::Armature) {
+			dragonBones::Armature *armature = static_cast<dragonBones::Armature *>(display.first);
+			DragonBonesArmature *convertedDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
+			if constexpr (std::is_invocable_r_v<bool, Func, DragonBonesArmature *>) {
+				if (p_action(convertedDisplay)) {
+					break;
+				}
+			} else {
+				p_action(convertedDisplay);
+			}
+		}
+	}
 }
 
 void DragonBonesArmature::set_debug(bool _b_debug, bool p_recursively) {
@@ -95,16 +99,9 @@ void DragonBonesArmature::set_debug(bool _b_debug, bool p_recursively) {
 			continue;
 
 		if (p_recursively) {
-			for (std::pair<void *, DisplayType> displayItem : slot->getDisplayList()) {
-				// propagate texture to child armature slots?
-				if (displayItem.second == DisplayType::Armature) {
-					// recurse your way on down there, you scamp
-					Armature *armature = static_cast<Armature *>(displayItem.first);
-					DragonBonesArmature *armatureDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
-
-					armatureDisplay->set_debug(_b_debug, p_recursively);
-				}
-			}
+			for_each_armature([_b_debug](DragonBonesArmature *p_child_armature) {
+				p_child_armature->set_debug(_b_debug, true);
+			});
 		}
 
 		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
@@ -233,16 +230,9 @@ void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
 	}
 
 	if (b_children) {
-		for (Slot *slot : getArmature()->getSlots()) {
-			if (slot->getDisplayList().size() == 0)
-				continue;
-			std::pair<void *, DisplayType> display = slot->getDisplayList()[slot->getDisplayIndex()];
-			if (display.second == DisplayType::Armature) {
-				Armature *armature = static_cast<Armature *>(display.first);
-				DragonBonesArmature *convertedDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
-				convertedDisplay->stop_all_animations(b_children, b_reset);
-			}
-		}
+		for_each_armature([b_reset](DragonBonesArmature *p_child_armature) {
+			p_child_armature->stop_all_animations(true, b_reset);
+		});
 	}
 }
 
@@ -252,9 +242,15 @@ void DragonBonesArmature::fade_in(const String &_animation_name, float _time, in
 	}
 }
 
-void DragonBonesArmature::reset() {
+void DragonBonesArmature::reset(bool p_recursively) {
 	if (getAnimation()) {
 		getAnimation()->reset();
+	}
+
+	if (p_recursively) {
+		for_each_armature([](DragonBonesArmature *p_child_armature) {
+			p_child_armature->reset(true);
+		});
 	}
 }
 
@@ -501,17 +497,10 @@ void DragonBonesArmature::setup_recursively(bool _b_debug, const Ref<Texture> &_
 		if (!slot)
 			continue;
 
-		for (std::pair<void *, DisplayType> displayItem : slot->getDisplayList()) {
-			// propagate texture to child armature slots?
-			if (displayItem.second == DisplayType::Armature) {
-				// recurse your way on down there, you scamp
-				Armature *armature = static_cast<Armature *>(displayItem.first);
-				DragonBonesArmature *armatureDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
-
-				armatureDisplay->p_owner = p_owner;
-				armatureDisplay->setup_recursively(b_debug, _m_texture_atlas);
-			}
-		}
+		for_each_armature([&_m_texture_atlas, this](DragonBonesArmature *p_child_armature) {
+			p_child_armature->p_owner = p_owner;
+			p_child_armature->setup_recursively(b_debug, _m_texture_atlas);
+		});
 
 		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
 			add_child(display);
