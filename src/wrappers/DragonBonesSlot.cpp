@@ -100,12 +100,18 @@ void Slot_GD::_removeDisplay() {
 }
 
 void Slot_GD::__get_uv_pt(Point2 &_pt, bool _is_rot, float _u, float _v, const Rectangle &_reg, const TextureAtlasData *_p_atlas) {
+	Size2 tex_size(_p_atlas->width, _p_atlas->height);
+	if (_renderDisplay && _renderDisplay->texture.is_valid()) {
+		// 以实际纹理为准
+		tex_size = _renderDisplay->texture->get_size();
+	}
+
 	if (_is_rot) {
-		_pt.x = (_reg.x + (1.f - _v) * _reg.width) / float(_p_atlas->width);
-		_pt.y = (_reg.y + _u * _reg.height) / float(_p_atlas->height);
+		_pt.x = (_reg.x + (1.f - _v) * _reg.width) / tex_size.x;
+		_pt.y = (_reg.y + _u * _reg.height) / tex_size.y;
 	} else {
-		_pt.x = (_reg.x + _u * _reg.width) / float(_p_atlas->width);
-		_pt.y = (_reg.y + _v * _reg.height) / float(_p_atlas->height);
+		_pt.x = (_reg.x + _u * _reg.width) / tex_size.x;
+		_pt.y = (_reg.y + _v * _reg.height) / tex_size.y;
 	}
 }
 
@@ -341,10 +347,6 @@ void Slot_GD::_onClear() {
 
 	_textureScale = 1.0f;
 	_renderDisplay = nullptr;
-	if (_textureData) {
-		delete _textureData;
-		_textureData = nullptr;
-	}
 }
 
 /* GODOT CLASS WRAPPER FOR GIVING SCRIPT ACCESS */

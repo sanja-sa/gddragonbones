@@ -33,14 +33,14 @@ protected:
 
 	virtual void _onClear() override;
 
-	static void __get_uv_pt(Point2 &_pt, bool _is_rot, float _u, float _v, const dragonBones::Rectangle &_reg, const dragonBones::TextureAtlasData *_p_atlas);
+	void __get_uv_pt(Point2 &_pt, bool _is_rot, float _u, float _v, const dragonBones::Rectangle &_reg, const dragonBones::TextureAtlasData *_p_atlas);
 };
 
 class DragonBonesSlot : public RefCounted {
 	GDCLASS(DragonBonesSlot, RefCounted);
 
 private:
-	Slot_GD *slot{ nullptr };
+	Slot_GD *slot{ nullptr }; // 生命周期由 dragonBones::ArmatureData 管理
 
 	friend class DragonBonesFactory;
 
@@ -49,12 +49,7 @@ public:
 	DragonBonesSlot(Slot_GD *p_slot) :
 			slot(p_slot) {}
 
-	virtual ~DragonBonesSlot() {
-		// if (slot) {
-		// 	slot->returnToPool();
-		// 	slot = nullptr;
-		// }
-	}
+	virtual ~DragonBonesSlot() = default;
 
 public:
 	/* BIND METHODS */
