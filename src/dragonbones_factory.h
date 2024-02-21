@@ -1,15 +1,28 @@
 #pragma once
 
-#include "dragonBones/model/DragonBonesData.h"
-#include "dragonBones/model/TextureAtlasData.h"
+#include "dragonBones/factory/BaseFactory.h"
+
 #include "godot_cpp/classes/resource.hpp"
 #include "godot_cpp/classes/texture2d.hpp"
-#include "wrappers/DragonBonesFactory.h"
 
 namespace godot {
 
-class DragonBonesResource : public Resource {
-	GDCLASS(DragonBonesResource, Resource)
+class DragonBonesFactory : public Resource, private dragonBones::BaseFactory {
+	GDCLASS(DragonBonesFactory, Resource)
+
+protected:
+	// dragonBones::BaseFactory 成员
+	void set_building_dragon_bones(dragonBones::DragonBones *p_building_instance) { _dragonBones = p_building_instance; }
+
+	dragonBones::DragonBonesData *loadDragonBonesData(const char *_p_data_loaded, const std::string &name = "");
+	dragonBones::TextureAtlasData *loadTextureAtlasData(const char *_p_data_loaded, Ref<Texture> *_p_atlasTexture, const std::string &name = "", float scale = 1.0f);
+	class DragonBonesArmature *buildArmatureDisplay(const std::string &armatureName, const std::string &dragonBonesName, const std::string &skinName = "", const std::string &textureAtlasName = "") const;
+
+	virtual dragonBones::TextureAtlasData *_buildTextureAtlasData(dragonBones::TextureAtlasData *textureAtlasData, void *textureAtlas) const override;
+	virtual dragonBones::Armature *_buildArmature(const dragonBones::BuildArmaturePackage &dataPackage) const override;
+	virtual dragonBones::Slot *_buildSlot(const dragonBones::BuildArmaturePackage &dataPackage, const dragonBones::SlotData *slotData, dragonBones::Armature *armature) const override;
+	virtual dragonBones::Armature *_buildChildArmature(const dragonBones::BuildArmaturePackage *dataPackage, dragonBones::Slot *slot, dragonBones::DisplayData *displayData) const override;
+	virtual void _buildBones(const dragonBones::BuildArmaturePackage &dataPackage, dragonBones::Armature *armature) const override;
 
 public:
 	static constexpr auto SRC_DBJSON_EXT = "dbjson";
@@ -18,8 +31,6 @@ public:
 	static constexpr auto SAVED_EXT = "res";
 
 private:
-	DragonBonesFactory *const factory{ memnew(DragonBonesFactory) };
-
 	String dragon_bones_ske_file_md5{};
 	String texture_atlas_json_file_md5{};
 
@@ -34,8 +45,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	DragonBonesResource() = default;
-	~DragonBonesResource() { memdelete(factory); }
+	DragonBonesFactory() = default;
 
 	Error load_dragon_bones_data(const String &p_path);
 	Error load_texture_atlas_data(const String &p_path);

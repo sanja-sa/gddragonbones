@@ -1,6 +1,6 @@
 #include "dragonbones_editor_plugin.h"
 
-#include "../dragonbones_resource.h"
+#include "../dragonbones_factory.h"
 #include "godot_cpp/classes/config_file.hpp"
 #include "godot_cpp/classes/dir_access.hpp"
 #include "godot_cpp/classes/file_access.hpp"
@@ -14,11 +14,11 @@ void DragonBonesImportPlugin::_bind_methods() {
 }
 
 String DragonBonesImportPlugin::_get_importer_name() const {
-	return DragonBonesResource::get_class_static().capitalize().replace(" ", "_").to_lower();
+	return DragonBonesFactory::get_class_static().capitalize().replace(" ", "_").to_lower();
 }
 
 String DragonBonesImportPlugin::_get_visible_name() const {
-	return DragonBonesResource::get_class_static();
+	return DragonBonesFactory::get_class_static();
 }
 
 int32_t DragonBonesImportPlugin::_get_preset_count() const {
@@ -31,9 +31,9 @@ String DragonBonesImportPlugin::_get_preset_name(int32_t preset_index) const {
 
 PackedStringArray DragonBonesImportPlugin::_get_recognized_extensions() const {
 	PackedStringArray ret;
-	ret.push_back(DragonBonesResource::SRC_DBJSON_EXT);
-	ret.push_back(DragonBonesResource::SRC_JSON_EXT);
-	ret.push_back(DragonBonesResource::SRC_BIN_EXT);
+	ret.push_back(DragonBonesFactory::SRC_DBJSON_EXT);
+	ret.push_back(DragonBonesFactory::SRC_JSON_EXT);
+	ret.push_back(DragonBonesFactory::SRC_BIN_EXT);
 	return ret;
 }
 
@@ -50,11 +50,11 @@ TypedArray<Dictionary> DragonBonesImportPlugin::_get_import_options(const String
 }
 
 String DragonBonesImportPlugin::_get_save_extension() const {
-	return DragonBonesResource::SAVED_EXT;
+	return DragonBonesFactory::SAVED_EXT;
 }
 
 String DragonBonesImportPlugin::_get_resource_type() const {
-	return DragonBonesResource::get_class_static();
+	return DragonBonesFactory::get_class_static();
 }
 
 double DragonBonesImportPlugin::_get_priority() const {
@@ -92,7 +92,7 @@ static Error set_import_config_to_json_type(const String &p_src_file, const Stri
 	}
 
 	//
-	const auto save_res_file = p_save_path + String(".") + DragonBonesResource::SAVED_EXT;
+	const auto save_res_file = p_save_path + String(".") + DragonBonesFactory::SAVED_EXT;
 	if (FileAccess::file_exists(save_res_file)) {
 		err = DirAccess::remove_absolute(save_res_file);
 	}
@@ -117,7 +117,7 @@ Error DragonBonesImportPlugin::_import(const String &p_source_file, const String
 
 	String base_path = p_source_file.get_basename();
 	if (!base_path.ends_with("_ske")) {
-		Ref<DragonBonesResource> res;
+		Ref<DragonBonesFactory> res;
 		res.instantiate();
 		ResourceSaver::get_singleton()->save(res, save_path);
 		callable_mp_static(&set_import_config_to_json_type).call_deferred(p_source_file, p_save_path);
@@ -136,7 +136,7 @@ Error DragonBonesImportPlugin::_import(const String &p_source_file, const String
 		return ERR_FILE_NOT_FOUND;
 	}
 
-	Ref<DragonBonesResource> res;
+	Ref<DragonBonesFactory> res;
 	res.instantiate();
 
 	Error err = res->load_texture_atlas_data(tex_atlas_file);
