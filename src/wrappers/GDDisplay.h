@@ -29,9 +29,15 @@ public:
 	virtual ~GDDisplay() = default;
 
 	void set_blend_mode(CanvasItemMaterial::BlendMode p_blend_mode) {
-		if (auto mat = Object::cast_to<CanvasItemMaterial>(get_material().ptr())) {
-			mat->set_blend_mode(p_blend_mode);
+		Ref<CanvasItemMaterial> mat = get_material();
+		if (mat.is_null()) {
+			if (p_blend_mode == CanvasItemMaterial::BLEND_MODE_MIX) {
+				return;
+			}
+			mat.instantiate();
+			set_material(mat);
 		}
+		mat->set_blend_mode(p_blend_mode);
 	}
 
 	virtual void update_modulate(const Color &p_modulate) { set_modulate(p_modulate); }
