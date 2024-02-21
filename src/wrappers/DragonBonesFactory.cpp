@@ -6,23 +6,8 @@
 #include "GDTextureAtlasData.h"
 #include "dragonBones/DragonBonesHeaders.h"
 
-
 using namespace godot;
 using namespace dragonBones;
-
-DragonBonesFactory *DragonBonesFactory::singleton = ::new DragonBonesFactory; //{ nullptr };
-
-DragonBonesFactory::DragonBonesFactory() {
-	ERR_FAIL_COND_MSG(singleton, "Reinstantiate DragonBonesFactory");
-	singleton = this;
-}
-
-DragonBonesFactory::~DragonBonesFactory() {
-	clear();
-	if (singleton == this) {
-		singleton = nullptr;
-	}
-}
 
 DragonBonesData *DragonBonesFactory::loadDragonBonesData(const char *_p_data_loaded, const std::string &name) {
 	if (!name.empty()) {

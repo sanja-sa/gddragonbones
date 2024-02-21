@@ -141,7 +141,7 @@ Error DragonBonesImportPlugin::_import(const String &p_source_file, const String
 
 	Error err = res->load_texture_atlas_data(tex_atlas_file);
 	ERR_FAIL_COND_V(err != OK, err);
-	err = res->load_bones_data(ske_file);
+	err = res->load_dragon_bones_data(ske_file);
 	ERR_FAIL_COND_V(err != OK, err);
 
 	if (FileAccess::file_exists(tex_file)) {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "DragonBonesArmature.h"
 #include "DragonBonesSlot.h"
 #include "dragonBones/factory/BaseFactory.h"
@@ -9,22 +7,14 @@
 namespace godot {
 
 class DragonBonesFactory : public dragonBones::BaseFactory {
-	DRAGONBONES_DISALLOW_COPY_AND_ASSIGN(DragonBonesFactory)
-
-private:
-	static DragonBonesFactory *singleton; // TODO 实例化
-
-protected:
 public:
-	DragonBonesFactory();
-	~DragonBonesFactory();
-
-	static DragonBonesFactory *get_singleton() { return singleton; }
+	DragonBonesFactory() = default;
+	~DragonBonesFactory() = default;
 
 public:
 	void set_building_dragonbones_instance(dragonBones::DragonBones *p_building_instance) { _dragonBones = p_building_instance; }
 
-	dragonBones::DragonBonesData *loadDragonBonesData(const char *_p_data_loaded, const std::string &name);
+	dragonBones::DragonBonesData *loadDragonBonesData(const char *_p_data_loaded, const std::string &name = "");
 	dragonBones::TextureAtlasData *loadTextureAtlasData(const char *_p_data_loaded, Ref<Texture> *_p_atlasTexture, const std::string &name = "", float scale = 1.0f);
 	DragonBonesArmature *buildArmatureDisplay(const std::string &armatureName, const std::string &dragonBonesName, const std::string &skinName = "", const std::string &textureAtlasName = "") const;
 
