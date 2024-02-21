@@ -36,8 +36,6 @@ private:
 	bool active{ true };
 	bool processing{ false };
 
-	operator dragonBones::IArmatureProxy *() { return static_cast<dragonBones::IArmatureProxy *>(this); }
-
 protected:
 	dragonBones::Armature *p_armature{ nullptr };
 	std::map<std::string, Ref<DragonBonesBone>> _bones;
@@ -113,8 +111,8 @@ public:
 
 	void play_from_time(const String &_animation_name, float _f_time, int loop = -1);
 	void play_from_progress(const String &_animation_name, float f_progress, int loop = -1);
-	void stop(const String &_animation_name, bool b_reset = false);
-	void stop_all_animations(bool b_children = false, bool b_reset = false);
+	void stop(const String &_animation_name, bool b_reset = false, bool p_recursively = false);
+	void stop_all_animations(bool b_reset = false, bool p_recursively = false);
 	void fade_in(const String &_animation_name, float _time,
 			int _loop, int _layer, const String &_group, AnimFadeOutMode _fade_out_mode);
 
@@ -162,12 +160,12 @@ public:
 	void set_callback_mode_process(AnimationCallbackModeProcess p_process_mode, bool p_recursively = false);
 	AnimationCallbackModeProcess get_callback_mode_process() const { return callback_mode_process; }
 
-	void flip_x_(bool p_flip_x) { flip_x(p_flip_x); }
-	void flip_x(bool p_flip_x, bool p_recursively = false);
+	void set_flip_x_(bool p_flip_x) { set_flip_x(p_flip_x); }
+	void set_flip_x(bool p_flip_x, bool p_recursively = false);
 	bool is_flipped_x() const;
 
-	void flip_y_(bool p_flip_y) { flip_y(p_flip_y); }
-	void flip_y(bool p_flip_y, bool p_recursively = false);
+	void set_flip_y_(bool p_flip_y) { set_flip_y(p_flip_y); }
+	void set_flip_y(bool p_flip_y, bool p_recursively = false);
 	bool is_flipped_y() const;
 
 public:
@@ -187,10 +185,14 @@ protected:
 	};
 	static std::vector<StoragedProperty> storage_properties;
 
-	void _validate_property(PropertyInfo &p_property) const;
 	bool _set(const StringName &p_name, const Variant &p_val);
 	bool _get(const StringName &p_name, Variant &r_val) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
+
+public:
+	bool has_sub_armature() const;
+
+protected:
 #endif // TOOLS_ENABLED
 
 private:
@@ -209,14 +211,14 @@ protected:
 
 public:
 	DragonBonesArmatureProxy() = default;
-	DragonBonesArmatureProxy(Node *p_armature_node) :
+	DragonBonesArmatureProxy(DragonBonesArmature *p_armature_node) :
 			armature_node(p_armature_node) {}
 
 private:
 	static std::vector<PropertyInfo> armature_property_list;
 	friend class DragonBonesArmature;
 
-	Node *armature_node{ nullptr };
+	DragonBonesArmature *armature_node{ nullptr };
 	friend class DragonBones;
 };
 #endif // TOOLS_ENABLED

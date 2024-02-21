@@ -3,6 +3,7 @@
 #include "GDDisplay.h"
 
 #include "dragonBones/DragonBonesHeaders.h"
+#include "dragonbones.h"
 #include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/classes/ref.hpp"
 
@@ -35,7 +36,7 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("play_from_time", "animation_name", "f_time", "loop_count"), &DragonBonesArmature::play_from_time);
 	ClassDB::bind_method(D_METHOD("play_from_progress", "animation_name", "f_progress", "loop_count"), &DragonBonesArmature::play_from_progress);
 	ClassDB::bind_method(D_METHOD("stop", "animation_name", "b_reset"), &DragonBonesArmature::stop);
-	ClassDB::bind_method(D_METHOD("stop_all_animations", "b_reset"), &DragonBonesArmature::stop_all_animations);
+	ClassDB::bind_method(D_METHOD("stop_all_animations", "reset", "recursively"), &DragonBonesArmature::stop_all_animations);
 	ClassDB::bind_method(D_METHOD("fade_in"), &DragonBonesArmature::fade_in);
 
 	ClassDB::bind_method(D_METHOD("reset", "recurisively"), &DragonBonesArmature::reset);
@@ -61,7 +62,7 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_bones"), &DragonBonesArmature::get_bones);
 	ClassDB::bind_method(D_METHOD("get_bone", "bone_name"), &DragonBonesArmature::get_bone);
 
-	ClassDB::bind_method(D_METHOD("advance", "delta", "recursively"), &DragonBonesArmature::get_bone, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("advance", "delta", "recursively"), &DragonBonesArmature::advance, DEFVAL(false));
 
 	ClassDB::bind_method(D_METHOD("set_debug", "debug", "recursively"), &DragonBonesArmature::set_debug, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("set_active", "active", "recursively"), &DragonBonesArmature::set_active, DEFVAL(false));
@@ -83,10 +84,10 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_callback_mode_process_", "callback_mode_process"), &DragonBonesArmature::set_callback_mode_process_);
 	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &DragonBonesArmature::get_callback_mode_process);
 
-	ClassDB::bind_method(D_METHOD("set_flip_x_", "flip_x"), &DragonBonesArmature::flip_x_);
+	ClassDB::bind_method(D_METHOD("set_flip_x_", "flip_x"), &DragonBonesArmature::set_flip_x_);
 	ClassDB::bind_method(D_METHOD("is_flipped_x"), &DragonBonesArmature::is_flipped_x);
 
-	ClassDB::bind_method(D_METHOD("set_flip_y_", "flip_y"), &DragonBonesArmature::flip_y_);
+	ClassDB::bind_method(D_METHOD("set_flip_y_", "flip_y"), &DragonBonesArmature::set_flip_y_);
 	ClassDB::bind_method(D_METHOD("is_flipped_y"), &DragonBonesArmature::is_flipped_y);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), "set_debug_", "is_debug");
@@ -100,7 +101,7 @@ void DragonBonesArmature::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_y"), "set_flip_y_", "is_flipped_y");
 
 	ADD_GROUP("Callback Mode", "callback_mode_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "callback_mode_process", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_callback_mode_process", "get_callback_mode_process");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "callback_mode_process", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_callback_mode_process_", "get_callback_mode_process");
 
 	// Enum
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS);
@@ -115,17 +116,17 @@ void DragonBonesArmature::_bind_methods() {
 	BIND_CONSTANT(FADE_OUT_SINGLE);
 
 #ifdef TOOLS_ENABLED
-	auto props = ClassDB::class_get_property_list(get_class_static());
+	auto props = ClassDB::class_get_property_list(get_class_static(), true);
 	auto tmp_obj = memnew(DragonBonesArmature);
 	for (size_t i = 0; i < props.size(); ++i) {
 		Dictionary prop = props[i];
 		if ((uint32_t)prop["usage"] & PROPERTY_USAGE_STORAGE) {
 			storage_properties.emplace_back(StoragedProperty{ prop["name"], tmp_obj->get(prop["name"]) });
-
-			DragonBonesArmatureProxy::armature_property_list.emplace_back(PropertyInfo(
-					(Variant::Type)((int)prop["type"]), (StringName)prop["name"], (PropertyHint)((int)prop["hint"]),
-					(String)prop["hint_string"], PROPERTY_USAGE_EDITOR, (StringName)prop["class"]));
 		}
+
+		DragonBonesArmatureProxy::armature_property_list.emplace_back(PropertyInfo(
+				(Variant::Type)((int)prop["type"]), (StringName)prop["name"], (PropertyHint)((int)prop["hint"]),
+				(String)prop["hint_string"], (uint64_t)(prop["usage"]), (StringName)prop["class"]));
 	}
 
 	memdelete(tmp_obj);
@@ -211,10 +212,10 @@ void DragonBonesArmature::set_current_animation(const String &p_animation) {
 		stop(get_current_animation());
 	} else if (!is_playing()) {
 		// TODO: 循环
-		play(p_animation);
+		play(p_animation, static_cast<DragonBones *>(p_owner)->get_animation_loop());
 	} else if (get_current_animation() != p_animation) {
 		// TODO: 循环
-		play(p_animation);
+		play(p_animation, static_cast<DragonBones *>(p_owner)->get_animation_loop());
 	} else {
 		// 相同动画，无需响应
 	}
@@ -302,7 +303,7 @@ void DragonBonesArmature::play_from_progress(const String &_animation_name, floa
 	}
 }
 
-void DragonBonesArmature::stop(const String &_animation_name, bool b_reset) {
+void DragonBonesArmature::stop(const String &_animation_name, bool b_reset, bool p_recursively) {
 	if (getAnimation()) {
 		getAnimation()->stop(_animation_name.ascii().get_data());
 
@@ -312,9 +313,15 @@ void DragonBonesArmature::stop(const String &_animation_name, bool b_reset) {
 	}
 
 	_set_process(false);
+
+	if (p_recursively) {
+		for_each_armature([&_animation_name, b_reset](DragonBonesArmature *p_child_armature) {
+			p_child_armature->stop(_animation_name, b_reset, true);
+		});
+	}
 }
 
-void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
+void DragonBonesArmature::stop_all_animations(bool b_reset, bool p_recursively) {
 	if (getAnimation()) {
 		getAnimation()->stop("");
 	}
@@ -325,9 +332,9 @@ void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
 
 	_set_process(false);
 
-	if (b_children) {
+	if (p_recursively) {
 		for_each_armature([b_reset](DragonBonesArmature *p_child_armature) {
-			p_child_armature->stop_all_animations(true, b_reset);
+			p_child_armature->stop_all_animations(b_reset, true);
 		});
 	}
 }
@@ -487,12 +494,12 @@ void DragonBonesArmature::set_slot_display_color_multiplier(const String &_slot_
 	p_armature->getSlot(_slot_name.ascii().get_data())->_setColor(_new_color);
 }
 
-void DragonBonesArmature::flip_x(bool p_flip_x, bool p_recursively) {
+void DragonBonesArmature::set_flip_x(bool p_flip_x, bool p_recursively) {
 	getArmature()->setFlipX(p_flip_x);
 	getArmature()->advanceTime(0);
 	if (p_recursively) {
 		for_each_armature([p_flip_x](DragonBonesArmature *p_child_armature) {
-			p_child_armature->flip_x(p_flip_x, true);
+			p_child_armature->set_flip_x(p_flip_x, true);
 		});
 	}
 }
@@ -504,12 +511,12 @@ bool DragonBonesArmature::is_flipped_x() const {
 	return getArmature()->getFlipX();
 }
 
-void DragonBonesArmature::flip_y(bool p_flip_y, bool p_recursively) {
+void DragonBonesArmature::set_flip_y(bool p_flip_y, bool p_recursively) {
 	getArmature()->setFlipY(p_flip_y);
 	getArmature()->advanceTime(0);
 	if (p_recursively) {
 		for_each_armature([p_flip_y](DragonBonesArmature *p_child_armature) {
-			p_child_armature->flip_y(p_flip_y, true);
+			p_child_armature->set_flip_y(p_flip_y, true);
 		});
 	}
 }
@@ -672,11 +679,11 @@ void DragonBonesArmature::update_texture_atlas(const Ref<Texture> &_m_texture_at
 
 //
 void DragonBonesArmature::set_active(bool p_active, bool p_recursively) {
-	if (active == p_active)
-		return;
-	active = p_active;
+	if (active != p_active) {
+		active = p_active;
 
-	_set_process(processing, true);
+		_set_process(processing, true);
+	}
 
 	if (p_recursively) {
 		for_each_armature([p_active](DragonBonesArmature *p_child_armature) {
@@ -686,18 +693,17 @@ void DragonBonesArmature::set_active(bool p_active, bool p_recursively) {
 }
 
 void DragonBonesArmature::set_callback_mode_process(AnimationCallbackModeProcess p_process_mode, bool p_recursively) {
-	if (callback_mode_process == p_process_mode)
-		return;
+	if (callback_mode_process != p_process_mode) {
+		bool was_active = is_active();
+		if (was_active) {
+			set_active(false);
+		}
 
-	bool was_active = is_active();
-	if (was_active) {
-		set_active(false);
-	}
+		callback_mode_process = p_process_mode;
 
-	callback_mode_process = p_process_mode;
-
-	if (was_active) {
-		set_active(true);
+		if (was_active) {
+			set_active(true);
+		}
 	}
 
 	if (p_recursively) {
@@ -750,32 +756,31 @@ bool DragonBonesArmature::_get(const StringName &p_name, Variant &r_val) const {
 }
 
 void DragonBonesArmature::_get_property_list(List<PropertyInfo> *p_list) const {
+	// for (auto it : _slots) {
+	// 	if (it.second.is_null()) {
+	// 		continue;
+	// 	}
+
+	// 	if (it.second->get_child_armature()) {
+	// 		p_list->push_back(PropertyInfo(Variant::ARRAY, SNAME("sub_armatures"),
+	// 				PROPERTY_HINT_TYPE_STRING, vformat("%d/%d:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, DragonBonesArmatureProxy::get_class_static()),
+	// 				PROPERTY_USAGE_EDITOR));
+	// 		return;
+	// 	}
+	// }
+}
+
+bool DragonBonesArmature::has_sub_armature() const {
 	for (auto it : _slots) {
 		if (it.second.is_null()) {
 			continue;
 		}
 
 		if (it.second->get_child_armature()) {
-			p_list->push_back(PropertyInfo(Variant::ARRAY, SNAME("sub_armatures"),
-					PROPERTY_HINT_TYPE_STRING, vformat("%d/%d:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, DragonBonesArmatureProxy::get_class_static()),
-					PROPERTY_USAGE_EDITOR));
-			return;
+			return true;
 		}
 	}
-}
-
-void DragonBonesArmature::_validate_property(PropertyInfo &p_property) const {
-	if (!p_armature) {
-		return;
-	}
-	if (p_property.name == SNAME("current_animation")) {
-		String hint = "[none]";
-		for (const auto &anim : p_armature->getArmatureData()->getAnimationNames()) {
-			hint += ",";
-			hint += anim.c_str();
-		}
-		p_property.hint_string = hint;
-	}
+	return false;
 }
 
 #endif // TOOLS_ENABLED
@@ -919,7 +924,24 @@ void DragonBonesArmatureProxy::_get_property_list(List<PropertyInfo> *p_list) co
 	}
 
 	for (const auto &p : armature_property_list) {
-		p_list->push_back(p);
+		if (p.name == SNAME("current_animation") && armature_node->getArmature()) {
+			PropertyInfo info = p;
+			String hint = "[none]";
+			for (const auto &anim : armature_node->getArmature()->getArmatureData()->getAnimationNames()) {
+				hint += ",";
+				hint += anim.c_str();
+			}
+			info.hint_string = hint;
+			p_list->push_back(info);
+		} else {
+			p_list->push_back(p);
+		}
+	}
+
+	if (armature_node->has_sub_armature()) {
+		p_list->push_back(PropertyInfo(Variant::ARRAY, SNAME("sub_armatures"),
+				PROPERTY_HINT_TYPE_STRING, vformat("%d/%d:%s", Variant::OBJECT, PROPERTY_HINT_RESOURCE_TYPE, DragonBonesArmatureProxy::get_class_static()),
+				PROPERTY_USAGE_EDITOR));
 	}
 }
 
