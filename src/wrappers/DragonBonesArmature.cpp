@@ -236,7 +236,7 @@ void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
 	}
 }
 
-void DragonBonesArmature::fade_in(const String &_animation_name, float _time, int _loop, int _layer, const String &_group, DragonBonesArmature::AnimFadeOutMode _fade_out_mode) {
+void DragonBonesArmature::fade_in(const String &_animation_name, float _time, int _loop, int _layer, const String &_group, AnimFadeOutMode _fade_out_mode) {
 	if (has_animation(_animation_name)) {
 		getAnimation()->fadeIn(_animation_name.ascii().get_data(), _time, _loop, _layer, _group.ascii().get_data(), (AnimationFadeOutMode)_fade_out_mode);
 	}

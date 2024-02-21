@@ -113,7 +113,7 @@ public:
 	void stop(const String &_animation_name, bool b_reset = false);
 	void stop_all_animations(bool b_children = false, bool b_reset = false);
 	void fade_in(const String &_animation_name, float _time,
-			int _loop, int _layer, const String &_group, DragonBonesArmature::AnimFadeOutMode _fade_out_mode);
+			int _loop, int _layer, const String &_group, AnimFadeOutMode _fade_out_mode);
 
 	void reset(bool p_recursively = false);
 

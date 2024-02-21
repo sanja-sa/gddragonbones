@@ -35,6 +35,8 @@ void DragonBones::_cleanup() {
 	}
 
 	m_res.unref();
+
+	_set_process(false);
 }
 
 void DragonBones::dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
@@ -95,32 +97,26 @@ void DragonBones::dispatch_event(const String &_str_type, const dragonBones::Eve
 }
 
 void DragonBones::_on_resource_changed() {
-	if (m_res->texture_atlas_file_raw_data.is_empty() || m_res->bones_file_raw_data.is_empty()) {
-		return;
-	}
-
 	// 重设资源本身
 	auto to_set = m_res;
 	set_resource({});
 	set_resource(to_set);
 }
 
-void DragonBones::set_resource(Ref<DragonBonesResource> _p_data) {
+void DragonBones::set_resource(Ref<DragonBonesFactory> _p_data) {
 	using namespace dragonBones;
 	if (m_res == _p_data)
 		return;
 
 	Ref<Texture2D> old_texture;
 	if (m_res.is_valid())
-		old_texture = m_res->default_texture;
+		old_texture = m_res->get_default_texture();
 	else if (_p_data.is_valid())
-		old_texture = _p_data->default_texture;
+		old_texture = _p_data->get_default_texture();
 
 	if (p_armature) {
 		p_armature->stop_all_animations();
 	}
-
-	_cleanup();
 
 	static const StringName sn{ "changed" };
 	auto cb = callable_mp(this, &DragonBones::_on_resource_changed);
@@ -128,6 +124,7 @@ void DragonBones::set_resource(Ref<DragonBonesResource> _p_data) {
 		m_res->disconnect(sn, cb);
 	}
 
+	_cleanup();
 	m_res = _p_data;
 
 	if (m_res.is_null()) {
@@ -138,38 +135,20 @@ void DragonBones::set_resource(Ref<DragonBonesResource> _p_data) {
 		m_res->connect(sn, cb);
 	}
 
-	if (m_res->texture_atlas_file_raw_data.is_empty() || m_res->bones_file_raw_data.is_empty()) {
-		WARN_PRINT(vformat("DragonBonesResource \"%s\" is invalid, please setup its properties.", m_res));
+	if (!m_res->can_create_dragon_bones_instance()) {
+		WARN_PRINT(vformat("DragonBonesFactory \"%s\" is invalid, please setup its properties.", m_res));
 		return;
 	}
 
-	TextureAtlasData *__p_tad = DragonBonesFactory::get_singleton()->loadTextureAtlasData((char *)m_res->texture_atlas_file_raw_data.ptr(), nullptr); // TODO 内存安全
-	ERR_FAIL_COND(!__p_tad);
-	DragonBonesData *__p_dbd = DragonBonesFactory::get_singleton()->loadDragonBonesData((char *)m_res->bones_file_raw_data.ptr(), ""); // TODO 内存安全
-	ERR_FAIL_COND(!__p_dbd);
-
 	// build Armature display
-	const std::vector<std::string> &__r_v_m_names = __p_dbd->getArmatureNames();
-	ERR_FAIL_COND(!__r_v_m_names.size());
-
-	p_instance = memnew(dragonBones::DragonBones(this));
-	DragonBonesFactory::get_singleton()->set_building_dragonbones_instance(p_instance);
-
-	// 仅支持单个骨架
-	p_armature = DragonBonesFactory::get_singleton()->buildArmatureDisplay(__r_v_m_names[0].c_str(), __p_dbd->name);
+	p_instance = m_res->create_dragon_bones(this, p_armature);
 
 	// add children armature
 	p_armature->p_owner = this;
 
 	// To support non-texture atlas; I'd want to look around here
-	if (!m_texture_atlas.is_valid() || old_texture != m_res->default_texture)
-		m_texture_atlas = m_res->default_texture;
-
-	// correction for old version of DB tad files (Zero width, height)
-	if (m_texture_atlas.is_valid()) {
-		__p_tad->height = m_texture_atlas->get_height();
-		__p_tad->width = m_texture_atlas->get_width();
-	}
+	if (m_texture_atlas.is_null() || old_texture != m_res->get_default_texture())
+		m_texture_atlas = m_res->get_default_texture();
 
 	// update flip
 	p_armature->getArmature()->setFlipX(b_flip_x);
@@ -192,9 +171,11 @@ void DragonBones::set_resource(Ref<DragonBonesResource> _p_data) {
 
 	notify_property_list_changed();
 	queue_redraw();
+
+	_set_process(true);
 }
 
-Ref<DragonBonesResource> DragonBones::get_resource() {
+Ref<DragonBonesFactory> DragonBones::get_resource() {
 	return m_res;
 }
 
@@ -212,6 +193,8 @@ void DragonBones::set_active(bool _b_active) {
 	if (b_active == _b_active)
 		return;
 	b_active = _b_active;
+
+	_set_process(processing, true);
 }
 
 bool DragonBones::is_active() const {
@@ -239,27 +222,51 @@ float DragonBones::get_speed() const {
 }
 
 void DragonBones::set_animation_process_mode(DragonBonesArmature::AnimationCallbackModeProcess _mode) {
-	if (m_anim_mode == _mode)
+	if (callback_mode_process == _mode)
 		return;
-	m_anim_mode = _mode;
+
+	bool was_active = is_active();
+	if (was_active) {
+		set_active(false);
+	}
+
+	callback_mode_process = _mode;
+
+	if (was_active) {
+		set_active(true);
+	}
 }
 
 DragonBonesArmature::AnimationCallbackModeProcess DragonBones::get_animation_process_mode() const {
-	return m_anim_mode;
+	return callback_mode_process;
+}
+
+void DragonBones::_set_process(bool p_process, bool p_force) {
+	if (processing == p_process && !p_force) {
+		return;
+	}
+
+	set_physics_process_internal(callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS && p_process && b_active);
+	set_process_internal(callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE && p_process && b_active);
+
+	processing = p_process;
 }
 
 void DragonBones::_notification(int _what) {
 	switch (_what) {
-		case NOTIFICATION_READY: {
-			set_resource(get_resource());
+		case NOTIFICATION_ENTER_TREE: {
+			if (!processing) {
+				set_physics_process_internal(false);
+				set_process_internal(false);
+			}
 		} break;
-		case NOTIFICATION_PROCESS: {
-			if (b_active && m_anim_mode == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			if (b_active && callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE)
 				advance(get_process_delta_time());
 		} break;
 
-		case NOTIFICATION_PHYSICS_PROCESS: {
-			if (b_active && m_anim_mode == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
+		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
+			if (b_active && callback_mode_process == DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS)
 				advance(get_physics_process_delta_time());
 		} break;
 	}
@@ -267,7 +274,7 @@ void DragonBones::_notification(int _what) {
 
 void DragonBones::_reset() {
 	ERR_FAIL_NULL(p_armature);
-	p_armature->getAnimation()->reset();
+	p_armature->reset(true);
 }
 
 const dragonBones::DragonBonesData *DragonBones::get_dragonbones_data() const {
@@ -305,7 +312,7 @@ bool DragonBones::is_fliped_x() const {
 
 void DragonBones::flip_y(bool _b_flip) {
 	b_flip_y = _b_flip;
-	if (!p_armature) {
+	if (p_armature) {
 		p_armature->flip_y(_b_flip);
 	}
 }
@@ -322,8 +329,13 @@ void DragonBones::fade_in(const String &_name_anim, float _time, int _loop, int 
 	// setup speed
 	p_factory->set_speed(f_speed);
 	ERR_FAIL_NULL(p_armature);
-	p_armature->fade_in(_name_anim, _time, _loop, _layer, _group, _fade_out_mode);
-	b_playing = true;
+	if (p_armature->has_animation(_name_anim)) {
+		p_armature->fade_in(_name_anim, _time, _loop, _layer, _group, _fade_out_mode);
+		if (!b_playing) {
+			b_playing = true;
+			_set_process(true);
+		}
+	}
 }
 
 void DragonBones::fade_out(const String &_name_anim) {
@@ -331,9 +343,12 @@ void DragonBones::fade_out(const String &_name_anim) {
 	if (!p_armature->getAnimation()->isPlaying() || !p_armature->getAnimation()->hasAnimation(_name_anim.ascii().get_data()))
 		return;
 
-	p_armature->stop(_name_anim.ascii().get_data(), true);
+	p_armature->stop(_name_anim.ascii().get_data());
 
+	_set_process(false);
 	b_playing = false;
+
+	_reset();
 }
 
 void DragonBones::set_slot_display_index(const String &_slot_name, int _index) {
@@ -392,11 +407,12 @@ void DragonBones::play(bool _b_play) {
 		stop();
 		return;
 	}
+	_set_process(true);
 
 	// setup speed
 	p_factory->set_speed(f_speed);
 	if (p_armature && p_armature->has_animation(str_curr_anim)) {
-		p_armature->play(str_curr_anim, c_loop);
+		p_armature->play(str_curr_anim, c_loop); // TODO::
 		b_try_playing = false;
 	} else {
 		// not finded animation stop playing
@@ -452,10 +468,13 @@ void DragonBones::stop(bool _b_all) {
 	if (!b_inited)
 		return;
 
+	_set_process(false);
 	b_playing = false;
 
 	if (p_armature && p_armature->getAnimation()->isPlaying())
-		p_armature->stop(_b_all ? std::move(String("")) : str_curr_anim, true);
+		p_armature->stop(_b_all ? std::move(String("")) : str_curr_anim);
+
+	_reset();
 }
 
 float DragonBones::tell() {
@@ -521,9 +540,7 @@ Ref<Texture2D> DragonBones::get_texture() const {
 }
 
 bool DragonBones::_set(const StringName &_str_name, const Variant &_c_r_value) {
-	String name = _str_name;
-
-	if (name == "playback/curr_animation") {
+	if (_str_name == SNAME("playback/curr_animation")) {
 		if (str_curr_anim == _c_r_value)
 			return false;
 
@@ -540,14 +557,14 @@ bool DragonBones::_set(const StringName &_str_name, const Variant &_c_r_value) {
 			}
 		}
 		return true;
-	} else if (name == "playback/loop") {
+	} else if (_str_name == SNAME("playback/loop")) {
 		c_loop = _c_r_value;
 		if (b_inited && b_playing) {
 			_reset();
 			p_armature->play(str_curr_anim);
 		}
 		return true;
-	} else if (name == "playback/progress") {
+	} else if (_str_name == SNAME("playback/progress")) {
 		p_armature->seek_animation(str_curr_anim, _c_r_value);
 		return true;
 	}
@@ -556,21 +573,18 @@ bool DragonBones::_set(const StringName &_str_name, const Variant &_c_r_value) {
 }
 
 bool DragonBones::_get(const StringName &_str_name, Variant &_r_ret) const {
-	String __name = _str_name;
-
-	if (__name == "playback/curr_animation") {
+	if (_str_name == SNAME("playback/curr_animation")) {
 		_r_ret = str_curr_anim;
 		return true;
-	} else if (__name == "playback/loop") {
+	} else if (_str_name == SNAME("playback/loop")) {
 		_r_ret = c_loop;
 		return true;
-	} else if (__name == "playback/progress") {
+	} else if (_str_name == SNAME("playback/progress")) {
 		_r_ret = f_progress;
 		return true;
 	}
 	return false;
 }
-
 void DragonBones::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &DragonBones::set_texture);
 	ClassDB::bind_method(D_METHOD("get_texture"), &DragonBones::get_texture);
@@ -650,11 +664,12 @@ void DragonBones::_bind_methods() {
 
 	// This is how we set top level properties
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), "set_texture", "get_texture");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active", "is_active");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), "set_debug", "is_debug");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flipX"), "flip_x", "is_fliped_x");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flipY"), "flip_y", "is_fliped_y");
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, "DragonBonesResource"), "set_resource", "get_resource");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "resource", PROPERTY_HINT_RESOURCE_TYPE, DragonBonesFactory::get_class_static()), "set_resource", "get_resource");
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "playback/process_mode", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_animation_process_mode", "get_animation_process_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "playback/speed", PROPERTY_HINT_RANGE, "-10,10,0.01"), "set_speed", "get_speed");

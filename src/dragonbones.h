@@ -1,12 +1,15 @@
 #pragma once
 
 #include "dragonBones/core/DragonBones.h"
-#include "dragonbones_resource.h"
-#include "wrappers/DragonBonesFactory.h"
+#include "dragonbones_factory.h"
+#include "wrappers/DragonBonesArmature.h"
 #include "wrappers/GDDisplay.h"
 
 namespace godot {
 
+/// TODO: 对所有的armature进行操作
+// Done: 确保数据对象不被重复创建，并在需要的时候回收并重新创建（需要应用给其他实例）
+/// TODO: 修改dragonBones库的new delete
 class DragonBones : public GDOwnerNode, public dragonBones::IEventDispatcher {
 	GDCLASS(DragonBones, GDOwnerNode)
 
@@ -24,23 +27,21 @@ private:
 	dragonBones::DragonBones *p_instance{ nullptr };
 
 	Ref<Texture2D> m_texture_atlas;
-	Ref<DragonBonesResource> m_res;
+	Ref<DragonBonesFactory> m_res;
 	String str_curr_anim{ "[none]" };
 	DragonBonesArmature *p_armature{ nullptr };
-	DragonBonesArmature::AnimationCallbackModeProcess m_anim_mode{ DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
+	DragonBonesArmature::AnimationCallbackModeProcess callback_mode_process{ DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
 	float f_speed{ 1.0f };
 	float f_progress{ 0.0f };
 	int c_loop{ -1 };
 	bool b_active{ true };
+	bool processing{ false };
 	bool b_playing{ false };
 	bool b_debug{ false };
 	bool b_inited{ false };
 	bool b_try_playing{ false };
-
-	// #ifdef COMPATIBILITY_ENABLED
 	bool b_flip_x{ false };
 	bool b_flip_y{ false };
-	// #endif
 
 	bool b_inherit_child_material{ true };
 
@@ -51,6 +52,8 @@ protected:
 	bool _set(const StringName &_str_name, const Variant &_c_r_value);
 	bool _get(const StringName &_str_name, Variant &_r_ret) const;
 	void _get_property_list(List<PropertyInfo> *_p_list) const;
+
+	void _set_process(bool p_process, bool p_force = false);
 
 public:
 	DragonBones() = default;
@@ -65,8 +68,8 @@ public:
 	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 
 	// setters/getters
-	void set_resource(Ref<DragonBonesResource> _p_data);
-	Ref<DragonBonesResource> get_resource();
+	void set_resource(Ref<DragonBonesFactory> _p_data);
+	Ref<DragonBonesFactory> get_resource();
 
 	void set_inherit_material(bool _b_enable);
 	bool is_material_inherited() const;
