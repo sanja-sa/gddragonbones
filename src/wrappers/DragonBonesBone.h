@@ -10,7 +10,7 @@ class DragonBonesBone : public RefCounted {
 	GDCLASS(DragonBonesBone, RefCounted);
 
 protected:
-	dragonBones::Bone *boneData{ nullptr };
+	dragonBones::Bone *boneData{ nullptr }; // 生命周期由 dragonBones::ArmatureData 管理
 	Node2D *armature{ nullptr };
 
 public:
@@ -18,12 +18,7 @@ public:
 	DragonBonesBone(dragonBones::Bone *p_bone_data, Node2D *p_armature) :
 			boneData(p_bone_data), armature(p_armature) {}
 
-	~DragonBonesBone() {
-		if (boneData) {
-			boneData->returnToPool();
-			boneData = nullptr;
-		}
-	}
+	~DragonBonesBone() = default;
 
 public:
 	static void _bind_methods();
