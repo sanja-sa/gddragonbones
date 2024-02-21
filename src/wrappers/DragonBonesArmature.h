@@ -9,7 +9,6 @@
 namespace godot {
 
 // TODO: 独立材质控制
-// 是否播放动画要求Owner是否被processing
 // 同一个DragonBones中的Armature公用同一个时钟，不做特殊处理不能单独设置Armature的动画Speed
 class DragonBonesArmature : public GDDisplay, public dragonBones::IArmatureProxy {
 	GDCLASS(DragonBonesArmature, GDDisplay)
@@ -195,7 +194,7 @@ protected:
 #endif // TOOLS_ENABLED
 
 private:
-	void _set_process(bool p_process, bool p_force);
+	void _set_process(bool p_process, bool p_force = false);
 };
 
 #ifdef TOOLS_ENABLED

@@ -282,6 +282,8 @@ bool DragonBonesArmature::is_playing() const {
 void DragonBonesArmature::play(const String &_animation_name, int loop) {
 	if (has_animation(_animation_name)) {
 		getAnimation()->play(_animation_name.ascii().get_data(), loop);
+
+		_set_process(true);
 	}
 	// TODO: 是否需要在没有动画时停止一切动画
 }
@@ -308,6 +310,8 @@ void DragonBonesArmature::stop(const String &_animation_name, bool b_reset) {
 			reset();
 		}
 	}
+
+	_set_process(false);
 }
 
 void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
@@ -319,6 +323,8 @@ void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
 		reset();
 	}
 
+	_set_process(false);
+
 	if (b_children) {
 		for_each_armature([b_reset](DragonBonesArmature *p_child_armature) {
 			p_child_armature->stop_all_animations(true, b_reset);
@@ -329,6 +335,7 @@ void DragonBonesArmature::stop_all_animations(bool b_children, bool b_reset) {
 void DragonBonesArmature::fade_in(const String &_animation_name, float _time, int _loop, int _layer, const String &_group, AnimFadeOutMode _fade_out_mode) {
 	if (has_animation(_animation_name)) {
 		getAnimation()->fadeIn(_animation_name.ascii().get_data(), _time, _loop, _layer, _group.ascii().get_data(), (AnimationFadeOutMode)_fade_out_mode);
+		_set_process(true);
 	}
 }
 
