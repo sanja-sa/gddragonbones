@@ -1,11 +1,15 @@
 #include "dragonbones_factory.h"
+#include "dragonBones/core/DragonBones.h"
 #include "godot_cpp/classes/file_access.hpp"
 
+#include "godot_cpp/classes/resource_loader.hpp"
 #include "wrappers/DragonBonesArmature.h"
 #include "wrappers/GDMesh.h"
 #include "wrappers/GDTextureAtlasData.h"
 
 #include <dragonBones/DragonBonesHeaders.h>
+
+#include "dragonbones.h"
 
 using namespace godot;
 using namespace dragonBones;
@@ -30,6 +34,13 @@ TextureAtlasData *DragonBonesFactory::loadTextureAtlasData(const char *_p_data_l
 
 DragonBonesArmature *DragonBonesFactory::buildArmatureDisplay(const std::string &armatureName, const std::string &dragonBonesName, const std::string &skinName, const std::string &textureAtlasName) const {
 	const auto armature = buildArmature(armatureName, dragonBonesName, skinName, textureAtlasName);
+
+	// 初始化纹理
+	for (const auto slot : armature->getSlots()) {
+		if (auto slot_gd = static_cast<Slot_GD *>(slot)) {
+			slot_gd->update_display_texutre();
+		}
+	}
 
 	if (armature != nullptr) {
 		_dragonBones->getClock()->add(armature);
@@ -63,6 +74,8 @@ Slot *DragonBonesFactory::_buildSlot(const BuildArmaturePackage &dataPackage, co
 
 	slot->init(slotData, armature, wrapperDisplay, wrapperDisplay);
 	slot->update(0);
+
+	// slot->update_display_texutre();
 
 	Ref<DragonBonesSlot> tree_slot{ memnew(DragonBonesSlot(slot)) };
 
@@ -160,152 +173,214 @@ void make_dragon_bones_data_unref_texture_atlas_data(dragonBones::DragonBonesDat
 	}
 }
 
-template <bool LOAD_DRAGON_BONES_DATA>
-Error DragonBonesFactory::load_data(const String &p_file_path, String &p_r_loaded_file, String &p_r_file_md5) {
-	if (p_file_path.is_empty()) {
-		// 置空
-		if (p_r_loaded_file.is_empty()) {
-			return OK; // 不需要重复设置
+Error DragonBonesFactory::load_dragon_bones_ske_file_list(PackedStringArray p_files) {
+	Error err = OK;
+	// 去重
+	for (int64_t i = p_files.size() - 1; i >= 0; --i) {
+		auto file = p_files[i];
+		if (p_files.count(file) > 1) {
+			p_files.remove_at(i);
+			++i;
+		}
+	}
+
+	std::vector<std::string> data_names;
+	for (const auto &kv : getAllDragonBonesData()) {
+		data_names.emplace_back(kv.first);
+	}
+
+	for (const auto &name : data_names) {
+		removeDragonBonesData(name, true);
+	}
+
+	// 赋值
+	dragon_bones_ske_file_list = p_files;
+
+	// 加载
+	for (const auto &file_path : p_files) {
+		if (file_path.is_empty()) {
+			continue;
 		}
 
-		if constexpr (LOAD_DRAGON_BONES_DATA) {
-			if (dragon_bones_data && !dragon_bones_data->name.empty()) {
-				removeDragonBonesData(dragon_bones_data->name, true);
-				dragon_bones_data = nullptr;
+		auto file = FileAccess::open(file_path, FileAccess::READ);
+		if (file.is_null()) {
+			err = file->get_open_error();
+			ERR_PRINT(vformat("Load DragonBones ske file failed: \"%s\", error code: %d", file_path, err));
+		}
+
+		PackedByteArray raw_data;
+		raw_data.resize(file->get_length() + 1);
+		file->get_buffer(raw_data.ptrw(), file->get_length());
+		raw_data.set(file->get_length(), 0x00);
+
+		if (!loadDragonBonesData((const char *)raw_data.ptr())) {
+			err = ERR_PARSE_ERROR;
+		}
+	}
+
+	return err;
+}
+
+Error DragonBonesFactory::load_texture_atlas_json_file_list(PackedStringArray p_files) {
+	Error err = OK;
+	// 去重
+	for (int64_t i = p_files.size() - 1; i >= 0; --i) {
+		auto file = p_files[i];
+		if (p_files.count(file) > 1) {
+			p_files.remove_at(i);
+			++i;
+		}
+	}
+
+	std::vector<std::string> data_names;
+
+	for (const auto &atlas_kv : getAllTextureAtlasData()) {
+		// 去除占用
+		for (const auto &db_kv : getAllDragonBonesData()) {
+			for (const auto &atlas : atlas_kv.second) {
+				make_dragon_bones_data_unref_texture_atlas_data(db_kv.second, atlas);
 			}
-		} else {
-			// TextureAtlasData 中的 TextureData 可能仍被已有的 龙骨数据中的 Skin 引用，
-			// 确保其不被占用
-			make_dragon_bones_data_unref_texture_atlas_data(dragon_bones_data, texture_atlas_data);
+		}
 
-			if (texture_atlas_data && !texture_atlas_data->name.empty()) {
-				removeTextureAtlasData(texture_atlas_data->name, true);
-				texture_atlas_data = nullptr;
+		data_names.emplace_back(atlas_kv.first);
+	}
+
+	for (const auto &name : data_names) {
+		removeTextureAtlasData(name, true);
+	}
+
+	// 赋值
+	texture_atlas_json_file_list = p_files;
+
+	// 加载
+	for (const auto &file_path : p_files) {
+		if (file_path.is_empty()) {
+			continue;
+		}
+
+		auto file = FileAccess::open(file_path, FileAccess::READ);
+		if (file.is_null()) {
+			err = file->get_open_error();
+			ERR_PRINT(vformat("Load DragonBones tex file failed: \"%s\", error code: %d", file_path, err));
+		}
+
+		PackedByteArray raw_data;
+		raw_data.resize(file->get_length() + 1);
+		file->get_buffer(raw_data.ptrw(), file->get_length());
+		raw_data.set(file->get_length(), 0x00);
+
+		const auto data = static_cast<GDTextureAtlasData *>(loadTextureAtlasData((const char *)raw_data.ptr(), nullptr));
+
+		if (!data) {
+			err = ERR_PARSE_ERROR;
+			ERR_CONTINUE_MSG(false, vformat("Parse failed: \"%s\"", file_path));
+		}
+
+		if (data->imagePath.empty()) {
+			auto datas = getTextureAtlasData(data->name);
+			if (datas) {
+				for (auto it = datas->begin(); it != datas->end(); ++it) {
+					if (*it != data) {
+						continue;
+					}
+					datas->erase(it);
+				}
 			}
+
+			err = ERR_PARSE_ERROR;
+			ERR_CONTINUE_MSG(false, vformat("Unsupport texture atlas file: \"%s\", need \"imagePath\" field.", file_path));
 		}
 
-		p_r_loaded_file = "";
-		p_r_file_md5 = "";
-		return OK;
+		data->init(file_path.get_base_dir().path_join(data->imagePath.c_str()));
 	}
+	return err;
+}
 
-	auto file = FileAccess::open(p_file_path, FileAccess::READ);
-	ERR_FAIL_NULL_V(file, file->get_open_error());
-	ERR_FAIL_COND_V(!file->get_length(), ERR_PARSE_ERROR);
+void DragonBonesFactory::set_dragon_bones_ske_file_list(PackedStringArray p_files) {
+	load_dragon_bones_ske_file_list(std::move(p_files));
+	emit_changed();
+}
 
-	const auto md5 = FileAccess::get_md5(p_file_path);
+void DragonBonesFactory::set_texture_atlas_json_file_list(PackedStringArray p_files) {
+	load_texture_atlas_json_file_list(std::move(p_files));
+	emit_changed();
+}
 
-	bool loaded = false;
-	if constexpr (LOAD_DRAGON_BONES_DATA) {
-		loaded = dragon_bones_data;
+PackedStringArray DragonBonesFactory::get_loaded_dragon_bones_data_name_list() const {
+	PackedStringArray ret;
+	for (auto kv : getAllDragonBonesData()) {
+		ret.push_back(kv.first.c_str());
+	}
+	return ret;
+}
+
+PackedStringArray DragonBonesFactory::get_loaded_dragon_bones_main_skin_name_list(const String &p_daragon_bones_data_name) const {
+	PackedStringArray ret;
+
+	DragonBonesData *dbdata = nullptr;
+	if (!p_daragon_bones_data_name.is_empty()) {
+		dbdata = getDragonBonesData(p_daragon_bones_data_name.ascii().get_data());
 	} else {
-		loaded = texture_atlas_data;
-	}
-
-	if (loaded && p_file_path == p_r_loaded_file && md5 == p_r_file_md5) {
-		// 已经加载，且文件没有变动，直接返回
-		return OK;
-	}
-
-	// 读取数据
-	PackedByteArray raw_data;
-	raw_data.resize(file->get_length() + 1);
-	file->get_buffer(raw_data.ptrw(), file->get_length());
-	raw_data.set(file->get_length(), 0x00);
-
-	if constexpr (LOAD_DRAGON_BONES_DATA) {
-		if (dragon_bones_data && !dragon_bones_data->name.empty()) {
-			removeDragonBonesData(dragon_bones_data->name, true);
+		if (getAllDragonBonesData().size() > 0) {
+			dbdata = getAllDragonBonesData().begin()->second;
 		}
-		dragon_bones_data = loadDragonBonesData((const char *)raw_data.ptr());
-		ERR_FAIL_NULL_V(dragon_bones_data, ERR_PARSE_ERROR);
+	}
+
+	if (p_daragon_bones_data_name.is_empty()) {
+		return ret;
+	}
+
+	ERR_FAIL_NULL_V(dbdata, ret);
+
+	auto armature_data = dbdata->getArmature(dbdata->armatureNames[0]);
+	ERR_FAIL_NULL_V(armature_data, ret);
+
+	for (const auto &kv : armature_data->skins) {
+		if (kv.second) {
+			ret.push_back(kv.second->name.c_str());
+		}
+	}
+	return ret;
+}
+
+bool DragonBonesFactory::can_create_dragon_bones_instance() const {
+	return _dragonBonesDataMap.size() > 0 && _textureAtlasDataMap.size() > 0;
+}
+
+dragonBones::DragonBones *DragonBonesFactory::create_dragon_bones(
+		dragonBones::IEventDispatcher *p_event_manager, DragonBonesArmature *&r_main_armature, const String &p_armature_data_name, const String &p_skin_name) {
+	const auto &dragon_bones_data_list = getAllDragonBonesData();
+	ERR_FAIL_COND_V(dragon_bones_data_list.size() <= 0, nullptr);
+	dragonBones::DragonBonesData *dragon_bones_data{ nullptr };
+
+	if (p_armature_data_name.is_empty()) {
+		dragon_bones_data = dragon_bones_data_list.begin()->second;
 	} else {
-		// TextureAtlasData 中的 TextureData 可能仍被已有的 龙骨数据中的 Skin 引用，
-		// 确保其不被占用
-		make_dragon_bones_data_unref_texture_atlas_data(dragon_bones_data, texture_atlas_data);
-
-		if (texture_atlas_data && !texture_atlas_data->name.empty()) {
-			removeTextureAtlasData(texture_atlas_data->name, true);
-		}
-		texture_atlas_data = loadTextureAtlasData((const char *)raw_data.ptr(), nullptr);
-		ERR_FAIL_NULL_V(texture_atlas_data, ERR_PARSE_ERROR);
+		dragon_bones_data = getDragonBonesData(p_armature_data_name.ascii().get_data());
 	}
 
-	p_r_loaded_file = p_file_path;
-	p_r_file_md5 = md5;
-	return OK;
-}
-
-// 导入器用
-Error DragonBonesFactory::load_dragon_bones_data(const String &_path) {
-	return load_data<true>(_path, dragon_bones_ske_file, dragon_bones_ske_file_md5);
-}
-
-// 导入器用
-Error DragonBonesFactory::load_texture_atlas_data(const String &_path) {
-	return load_data<false>(_path, texture_atlas_json_file, texture_atlas_json_file_md5);
-}
-
-dragonBones::DragonBones *DragonBonesFactory::create_dragon_bones(dragonBones::IEventDispatcher *p_event_manager, DragonBonesArmature *&r_main_armature) {
 	ERR_FAIL_NULL_V(dragon_bones_data, nullptr);
 	ERR_FAIL_COND_V(dragon_bones_data->armatureNames.size() <= 0, nullptr);
 
 	auto *ret{ memnew(dragonBones::DragonBones(p_event_manager)) };
 	set_building_dragon_bones(ret);
-	r_main_armature = buildArmatureDisplay(dragon_bones_data->getArmatureNames()[0].c_str(), dragon_bones_data->name);
+
+	const auto armature_name = dragon_bones_data->getArmatureNames()[0];
+	r_main_armature = buildArmatureDisplay(armature_name, dragon_bones_data->name, p_skin_name.ascii().get_data());
 
 	return ret;
 }
 
-void DragonBonesFactory::set_dragon_bones_ske_file(const String &p_dragon_bones_ske_file) {
-	String old_md5 = dragon_bones_ske_file_md5;
-	auto old_data = dragon_bones_data;
-	auto err = load_dragon_bones_data(p_dragon_bones_ske_file);
-	if (old_md5 != dragon_bones_ske_file_md5 || old_data != dragon_bones_data) {
-		emit_changed();
-	}
-}
-
-void DragonBonesFactory::set_texture_atlas_json_file(const String &p_texture_atlas_json_file) {
-	String old_md5 = texture_atlas_json_file_md5;
-	auto old_data = texture_atlas_data;
-	load_texture_atlas_data(p_texture_atlas_json_file);
-	if (old_md5 != texture_atlas_json_file_md5 || old_data != texture_atlas_data) {
-		if (default_texture.is_valid() && texture_atlas_data) {
-			// 以默认纹理修正图集数据
-			texture_atlas_data->height = default_texture->get_height();
-			texture_atlas_data->width = default_texture->get_width();
-		}
-		emit_changed();
-	}
-}
-
-void DragonBonesFactory::set_default_texture(const Ref<Texture2D> &p_default_texture) {
-	if (default_texture == p_default_texture) {
-		return;
-	}
-	default_texture = p_default_texture;
-
-	if (default_texture.is_valid() && texture_atlas_data) {
-		// 以默认纹理修正图集数据
-		texture_atlas_data->height = default_texture->get_height();
-		texture_atlas_data->width = default_texture->get_width();
-	}
-
-	emit_changed();
-}
-
 void DragonBonesFactory::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_dragon_bones_ske_file", "dragon_bones_ske_file"), &DragonBonesFactory::set_dragon_bones_ske_file);
-	ClassDB::bind_method(D_METHOD("get_dragon_bones_ske_file"), &DragonBonesFactory::get_dragon_bones_ske_file);
+	ClassDB::bind_method(D_METHOD("get_loaded_dragon_bones_main_skin_name_list", "dragon_bones_data_name"), &DragonBonesFactory::get_loaded_dragon_bones_main_skin_name_list);
+	ClassDB::bind_method(D_METHOD("get_loaded_dragon_bones_data_name_list"), &DragonBonesFactory::get_loaded_dragon_bones_data_name_list);
 
-	ClassDB::bind_method(D_METHOD("set_texture_atlas_json_file", "texture_atlas_json_file"), &DragonBonesFactory::set_texture_atlas_json_file);
-	ClassDB::bind_method(D_METHOD("get_texture_atlas_json_file"), &DragonBonesFactory::get_texture_atlas_json_file);
+	ClassDB::bind_method(D_METHOD("set_dragon_bones_ske_file_list", "dragon_bones_ske_file_list"), &DragonBonesFactory::set_dragon_bones_ske_file_list);
+	ClassDB::bind_method(D_METHOD("get_dragon_bones_ske_file_list"), &DragonBonesFactory::get_dragon_bones_ske_file_list);
 
-	ClassDB::bind_method(D_METHOD("set_default_texture", "default_texture"), &DragonBonesFactory::set_default_texture);
-	ClassDB::bind_method(D_METHOD("get_default_texture"), &DragonBonesFactory::get_default_texture);
+	ClassDB::bind_method(D_METHOD("set_texture_atlas_json_file_list", "texture_atlas_json_file_list"), &DragonBonesFactory::set_texture_atlas_json_file_list);
+	ClassDB::bind_method(D_METHOD("get_get_dragon_bones_ske_file_list"), &DragonBonesFactory::get_get_dragon_bones_ske_file_list);
 
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "dragon_bones_ske_file", PROPERTY_HINT_FILE, "*.json,*dbbin"), "set_dragon_bones_ske_file", "get_dragon_bones_ske_file");
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "texture_atlas_json_file", PROPERTY_HINT_FILE, "*.json"), "set_texture_atlas_json_file", "get_texture_atlas_json_file");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "default_texture", PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static(), PROPERTY_USAGE_DEFAULT, Texture2D::get_class_static()), "set_default_texture", "get_default_texture");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "dragon_bones_ske_file_list", PROPERTY_HINT_TYPE_STRING, vformat("%d/%d:%s", Variant::STRING, PROPERTY_HINT_FILE, "*.dbjson,*.json,*.dbbin")), "set_dragon_bones_ske_file_list", "get_dragon_bones_ske_file_list");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "texture_atlas_json_file_list", PROPERTY_HINT_TYPE_STRING, vformat("%d/%d:%s", Variant::STRING, PROPERTY_HINT_FILE, "*.json")), "set_texture_atlas_json_file_list", "get_get_dragon_bones_ske_file_list");
 }

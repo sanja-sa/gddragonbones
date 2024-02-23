@@ -129,7 +129,6 @@ Error DragonBonesImportPlugin::_import(const String &p_source_file, const String
 
 	const String ske_file = p_source_file;
 	const String tex_atlas_file = base_path + "_tex.json";
-	const String tex_file = base_path + "_tex.png";
 
 	if (!FileAccess::file_exists(tex_atlas_file)) {
 		WARN_PRINT_ED(vformat("\"%s\" may be a DragonBones file, but can't be import automatically.", p_source_file));
@@ -139,14 +138,10 @@ Error DragonBonesImportPlugin::_import(const String &p_source_file, const String
 	Ref<DragonBonesFactory> res;
 	res.instantiate();
 
-	Error err = res->load_texture_atlas_data(tex_atlas_file);
+	Error err = res->load_texture_atlas_json_file_list(Array::make(tex_atlas_file));
 	ERR_FAIL_COND_V(err != OK, err);
-	err = res->load_dragon_bones_data(ske_file);
+	err = res->load_dragon_bones_ske_file_list(Array::make(ske_file));
 	ERR_FAIL_COND_V(err != OK, err);
-
-	if (FileAccess::file_exists(tex_file)) {
-		res->set_default_texture(ResourceLoader::get_singleton()->load(tex_file));
-	}
 
 	BitField<ResourceSaver::SaverFlags> flags = 0;
 	if (p_options["compress"].booleanize()) {

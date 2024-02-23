@@ -7,6 +7,7 @@
 
 namespace godot {
 
+// TODO: 暂不支持内嵌图集数据的龙骨文件
 class DragonBonesFactory : public Resource, private dragonBones::BaseFactory {
 	GDCLASS(DragonBonesFactory, Resource)
 
@@ -30,45 +31,33 @@ public:
 	static constexpr auto SRC_BIN_EXT = "dbbin";
 	static constexpr auto SAVED_EXT = "res";
 
-private:
-	String dragon_bones_ske_file_md5{};
-	String texture_atlas_json_file_md5{};
-
-	dragonBones::DragonBonesData *dragon_bones_data{ nullptr };
-	dragonBones::TextureAtlasData *texture_atlas_data{ nullptr };
-
-	// Tip: 私有模板，不需要在头文件中定义
-	template <bool LOAD_DRAGON_BONES_DATA>
-	Error load_data(const String &p_file_path, String &r_loaded_file, String &p_r_file_md5);
-
 protected:
 	static void _bind_methods();
 
 public:
 	DragonBonesFactory() = default;
 
-	Error load_dragon_bones_data(const String &p_path);
-	Error load_texture_atlas_data(const String &p_path);
+	Error load_dragon_bones_ske_file_list(PackedStringArray p_files);
+	Error load_texture_atlas_json_file_list(PackedStringArray p_files);
 
-	bool can_create_dragon_bones_instance() const { return dragon_bones_data && texture_atlas_data; }
+	bool can_create_dragon_bones_instance() const;
 
-	dragonBones::DragonBones *create_dragon_bones(dragonBones::IEventDispatcher *p_event_manager, DragonBonesArmature *&r_main_armature);
-
-public:
-	//  Binding
-	String get_dragon_bones_ske_file() const { return dragon_bones_ske_file; }
-	void set_dragon_bones_ske_file(const String &p_dragon_bones_ske_file);
-
-	String get_texture_atlas_json_file() const { return texture_atlas_json_file; }
-	void set_texture_atlas_json_file(const String &p_texture_atlas_json_file);
-
-	Ref<Texture2D> get_default_texture() const { return default_texture; }
-	void set_default_texture(const Ref<Texture2D> &p_default_texture);
+	dragonBones::DragonBones *create_dragon_bones(dragonBones::IEventDispatcher *p_event_manager, DragonBonesArmature *&r_main_armature, const String &p_armature_data_name = "", const String &p_skin_name = "");
 
 private:
-	Ref<Texture2D> default_texture;
-	String dragon_bones_ske_file;
-	String texture_atlas_json_file;
+	//  Binding
+	PackedStringArray dragon_bones_ske_file_list;
+	PackedStringArray texture_atlas_json_file_list;
+
+public:
+	PackedStringArray get_dragon_bones_ske_file_list() const { return dragon_bones_ske_file_list; }
+	void set_dragon_bones_ske_file_list(PackedStringArray p_files);
+
+	PackedStringArray get_get_dragon_bones_ske_file_list() const { return texture_atlas_json_file_list; }
+	void set_texture_atlas_json_file_list(PackedStringArray p_files);
+
+	PackedStringArray get_loaded_dragon_bones_data_name_list() const;
+	PackedStringArray get_loaded_dragon_bones_main_skin_name_list(const String &p_daragon_bones_data_name) const;
 };
 
 } //namespace godot
