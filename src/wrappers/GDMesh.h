@@ -31,6 +31,22 @@ public:
 	GDMesh() = default;
 	virtual ~GDMesh() = default;
 
+	virtual Ref<CanvasItemMaterial> get_material_to_set_blend_mode(bool p_required) override {
+		if (get_use_parent_material()) {
+			auto parent = dynamic_cast<GDOwnerNode *>(get_parent());
+			if (parent) {
+				return parent->get_material_to_set_blend_mode(p_required);
+			}
+		}
+
+		Ref<CanvasItemMaterial> ret = get_material();
+		if (ret.is_null() && p_required) {
+			ret.instantiate();
+			set_material(ret);
+		}
+		return ret;
+	}
+
 	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override {
 		if (p_owner) {
 			p_owner->dispatch_event(_str_type, _p_value);

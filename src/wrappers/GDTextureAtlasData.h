@@ -1,11 +1,10 @@
 #pragma once
 
 #include "dragonBones/model/TextureAtlasData.h"
-#include "godot_cpp/classes/ref.hpp"
-#include "godot_cpp/classes/texture2d.hpp"
-#include "godot_cpp/core/math.hpp"
 
-#include <corecrt.h>
+#include "godot_cpp/core/math.hpp"
+#include "godot_cpp/variant/string.hpp"
+
 namespace godot {
 class GDTextureData : public dragonBones::TextureData {
 	BIND_CLASS_TYPE_B(GDTextureData);

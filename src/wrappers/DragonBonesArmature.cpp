@@ -22,6 +22,22 @@ DragonBonesArmature::~DragonBonesArmature() {
 	dispose(true);
 }
 
+Ref<CanvasItemMaterial> DragonBonesArmature::get_material_to_set_blend_mode(bool p_required) {
+	if (get_use_parent_material()) {
+		auto parent = dynamic_cast<GDOwnerNode *>(get_parent());
+		if (parent) {
+			return parent->get_material_to_set_blend_mode(p_required);
+		}
+	}
+
+	Ref<CanvasItemMaterial> ret = get_material();
+	if (ret.is_null() && p_required) {
+		ret.instantiate();
+		set_material(ret);
+	}
+	return ret;
+}
+
 void DragonBonesArmature::_bind_methods() {
 	// TODO:: 属性
 	ClassDB::bind_method(D_METHOD("has_animation", "animation_name"), &DragonBonesArmature::has_animation);
@@ -67,6 +83,7 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_debug", "debug", "recursively"), &DragonBonesArmature::set_debug, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("set_active", "active", "recursively"), &DragonBonesArmature::set_active, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "callback_mode_process", "recursively"), &DragonBonesArmature::set_callback_mode_process, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("set_slots_inherit_material", "slots_inherit_material", "recursively"), &DragonBonesArmature::set_slots_inherit_material);
 
 	// Setter Getter
 	ClassDB::bind_method(D_METHOD("set_current_animation", "current_animation"), &DragonBonesArmature::set_current_animation);
@@ -93,11 +110,15 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_texture_override", "texture_override"), &DragonBonesArmature::set_texture_override);
 	ClassDB::bind_method(D_METHOD("get_texture_override"), &DragonBonesArmature::get_texture_override);
 
+	ClassDB::bind_method(D_METHOD("set_slots_inherit_material_", "slots_inherit_material"), &DragonBonesArmature::set_slots_inherit_material_);
+	ClassDB::bind_method(D_METHOD("is_slots_inherit_material"), &DragonBonesArmature::is_slots_inherit_material);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), "set_debug_", "is_debug");
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "current_animation", PROPERTY_HINT_ENUM, "", PROPERTY_USAGE_EDITOR), "set_current_animation", "get_current_animation");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "animation_progress", PROPERTY_HINT_RANGE, "0.0,1.0,0.0001"), "set_animation_progress", "get_animation_progress");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active_", "is_active");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "slots_inherit_material"), "set_slots_inherit_material_", "is_slots_inherit_material");
 
 	ADD_GROUP("Flip", "flip_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_x"), "set_flip_x_", "is_flipped_x");
@@ -133,6 +154,9 @@ void DragonBonesArmature::_bind_methods() {
 				(Variant::Type)((int)prop["type"]), (StringName)prop["name"], (PropertyHint)((int)prop["hint"]),
 				(String)prop["hint_string"], (uint64_t)(prop["usage"]), (StringName)prop["class"]));
 	}
+
+	storage_properties.emplace_back(StoragedProperty{ "use_parent_material", false });
+	DragonBonesArmatureProxy::armature_property_list.emplace_back(PropertyInfo(Variant::BOOL, "use_parent_material"));
 
 	memdelete(tmp_obj);
 #endif // TOOLS_ENABLED
@@ -661,18 +685,30 @@ void DragonBonesArmature::update_childs(bool _b_color, bool _b_blending) {
 	}
 }
 
-void DragonBonesArmature::update_material_inheritance(bool _b_inherit_material) {
+void DragonBonesArmature::set_slots_inherit_material(bool p_slots_inherit_material, bool p_recursively) {
 	if (!p_armature)
 		return;
+
+	slots_inherit_material = p_slots_inherit_material;
 
 	for (Slot *slot : p_armature->getSlots()) {
 		if (!slot)
 			continue;
 
 		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
-			display->set_use_parent_material(_b_inherit_material);
+			display->set_use_parent_material(p_slots_inherit_material);
 		}
 	}
+
+	if (p_recursively) {
+		for_each_armature([p_slots_inherit_material](auto p_child_armature) {
+			p_child_armature->set_slots_inherit_material(p_slots_inherit_material, true);
+		});
+	}
+}
+
+bool DragonBonesArmature::is_slots_inherit_material() const {
+	return slots_inherit_material;
 }
 
 void DragonBonesArmature::update_texture_atlas(const Ref<Texture> &_m_texture_atlas) {
@@ -687,6 +723,14 @@ void DragonBonesArmature::update_texture_atlas(const Ref<Texture> &_m_texture_at
 			display->queue_redraw();
 		}
 	}
+}
+
+void DragonBonesArmature::update_material_inheritance_recursively(bool p_inheritance) {
+	set_use_parent_material(p_inheritance);
+
+	for_each_armature([p_inheritance](auto p_child_armature) {
+		p_child_armature->update_material_inheritance_recursively(p_inheritance);
+	});
 }
 
 //

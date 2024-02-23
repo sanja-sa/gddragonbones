@@ -41,6 +41,17 @@ void DragonBones::dispatch_sound_event(const String &_str_type, const dragonBone
 		emit_signal("dragon_anim_snd_event", String(_p_value->animationState->name.c_str()), String(_p_value->name.c_str()));
 }
 
+Ref<CanvasItemMaterial> DragonBones::get_material_to_set_blend_mode(bool p_required) {
+	Ref<CanvasItemMaterial> ret = get_material();
+
+	if (ret.is_null() && p_required) {
+		ret.instantiate();
+		set_material(ret);
+	}
+
+	return ret;
+}
+
 void DragonBones::dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
 	using namespace dragonBones;
 	if (Engine::get_singleton()->is_editor_hint()) {
@@ -155,7 +166,7 @@ void DragonBones::set_factory(const Ref<DragonBonesFactory> &_p_data) {
 	p_armature->update_childs(true, true);
 
 	// update material inheritance
-	p_armature->update_material_inheritance(b_inherit_child_material);
+	p_armature->update_material_inheritance_recursively(armatures_inherite_material);
 
 	p_armature->advance(0);
 
@@ -168,14 +179,14 @@ Ref<DragonBonesFactory> DragonBones::get_factory() const {
 }
 
 void DragonBones::set_inherit_material(bool _b_enable) {
-	b_inherit_child_material = _b_enable;
+	armatures_inherite_material = _b_enable;
 	if (p_armature) {
-		p_armature->update_material_inheritance(b_inherit_child_material);
+		p_armature->update_material_inheritance_recursively(armatures_inherite_material);
 	}
 }
 
 bool DragonBones::is_material_inherited() const {
-	return b_inherit_child_material;
+	return armatures_inherite_material;
 }
 
 void DragonBones::set_active(bool _b_active) {
@@ -702,7 +713,7 @@ void DragonBones::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "instantiate_dragon_bones_data_name", PROPERTY_HINT_ENUM_SUGGESTION, "[default]"), "set_instantiate_dragon_bones_data_name", "get_instantiate_dragon_bones_data_name");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "instantiate_skin_name", PROPERTY_HINT_ENUM_SUGGESTION, "[default]"), "set_instantiate_skin_name", "get_instantiate_skin_name");
 
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "childs_use_this_material"), "set_inherit_material", "is_material_inherited");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "armaturess_use_this_material"), "set_inherit_material", "is_material_inherited");
 
 	ADD_SIGNAL(MethodInfo("dragon_anim_start", PropertyInfo(Variant::STRING, "anim")));
 	ADD_SIGNAL(MethodInfo("dragon_anim_complete", PropertyInfo(Variant::STRING, "anim")));

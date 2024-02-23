@@ -37,6 +37,8 @@ private:
 	bool active{ true };
 	bool processing{ false };
 
+	bool slots_inherit_material{ true };
+
 protected:
 	dragonBones::Armature *p_armature{ nullptr };
 	std::map<std::string, Ref<DragonBonesBone>> _bones;
@@ -62,6 +64,8 @@ public:
 			p_owner->dispatch_sound_event(_str_type, _p_value);
 		}
 	}
+
+	virtual Ref<CanvasItemMaterial> get_material_to_set_blend_mode(bool p_required) override;
 
 	dragonBones::Slot *getSlot(const std::string &name) const;
 
@@ -89,7 +93,7 @@ public:
 	void setup_recursively(bool _b_debug);
 	void update_childs(bool _b_color, bool _b_blending = false);
 	void update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
-	void update_material_inheritance(bool _b_inherit_material);
+	void update_material_inheritance_recursively(bool p_inheritance);
 
 	//
 	dragonBones::Slot *getSlot(const String &p_name) const { return p_armature->getSlot(p_name.ascii().get_data()); }
@@ -171,6 +175,10 @@ public:
 
 	Ref<Texture2D> get_texture_override() const;
 	void set_texture_override(const Ref<Texture2D> &p_texture_override);
+
+	void set_slots_inherit_material_(bool p_slots_inherit_material) { set_slots_inherit_material(p_slots_inherit_material); }
+	void set_slots_inherit_material(bool p_slots_inherit_material, bool p_recursively = false);
+	bool is_slots_inherit_material() const;
 
 public:
 	void set_settings(const Dictionary &p_setting);

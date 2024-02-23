@@ -8,12 +8,8 @@
 #define COMPATIBILITY_ENABLED
 
 namespace godot {
-
-// Done: 对所有的armature进行操作
-// Done: 确保数据对象不被重复创建，并在需要的时候回收并重新创建（需要应用给其他实例）
 /// TODO: 修改dragonBones库的new delete
 /// TODO: 重命名
-/// TODO: 材质的依赖？
 class DragonBones : public GDOwnerNode, public dragonBones::IEventDispatcher {
 	GDCLASS(DragonBones, GDOwnerNode)
 
@@ -51,7 +47,7 @@ private:
 #ifdef COMPATIBILITY_ENABLED
 #endif // COMPATIBILITY_ENABLED
 
-	bool b_inherit_child_material{ true };
+	bool armatures_inherite_material{ true };
 
 protected:
 	static void _bind_methods();
@@ -75,6 +71,7 @@ public:
 
 	virtual void dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
 	virtual void dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) override;
+	virtual Ref<CanvasItemMaterial> get_material_to_set_blend_mode(bool p_required) override;
 
 	// setters/getters
 	void set_factory(const Ref<DragonBonesFactory> &_p_data);
