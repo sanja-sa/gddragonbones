@@ -275,6 +275,10 @@ DragonBonesArmature *DragonBones::get_armature() {
 	return p_armature;
 }
 
+void DragonBones::set_armature(DragonBonesArmature *) const {
+	ERR_FAIL_MSG("DragonBones's property \"armature\" is readonly.");
+}
+
 void DragonBones::set_flip_x(bool _b_flip) {
 	b_flip_x = _b_flip;
 	if (p_armature) {
@@ -660,6 +664,7 @@ void DragonBones::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_speed_scale"), &DragonBones::get_speed_scale);
 
 	ClassDB::bind_method(D_METHOD("get_armature"), &DragonBones::get_armature);
+	ClassDB::bind_method(D_METHOD("set_armature_readonly"), &DragonBones::set_armature);
 	/*
 		END OF BASE ARMATURE FUNCTIONS
 	*/
@@ -682,6 +687,8 @@ void DragonBones::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_instantiate_skin_name", "instantiate_skin_name"), &DragonBones::set_instantiate_skin_name);
 	ClassDB::bind_method(D_METHOD("get_instantiate_skin_name"), &DragonBones::get_instantiate_skin_name);
+
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "armature", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE, DragonBonesArmature::get_class_static()), "set_armature_readonly", "get_armature");
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "factory", PROPERTY_HINT_RESOURCE_TYPE, DragonBonesFactory::get_class_static()), "set_factory", "get_factory");
 
@@ -833,15 +840,15 @@ void DragonBonesUserData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_string", "index"), &DragonBonesUserData::get_string, DEFVAL(0));
 
 	ClassDB::bind_method(D_METHOD("get_ints"), &DragonBonesUserData::get_ints);
-	ClassDB::bind_method(D_METHOD("set_ints", "_val"), &DragonBonesUserData::set_ints);
+	ClassDB::bind_method(D_METHOD("set_ints_readonly", "_val"), &DragonBonesUserData::set_ints);
 
 	ClassDB::bind_method(D_METHOD("get_floats"), &DragonBonesUserData::get_floats);
-	ClassDB::bind_method(D_METHOD("set_floats", "_val"), &DragonBonesUserData::set_floats);
+	ClassDB::bind_method(D_METHOD("set_floats_readonly", "_val"), &DragonBonesUserData::set_floats);
 
 	ClassDB::bind_method(D_METHOD("get_strings"), &DragonBonesUserData::get_strings);
-	ClassDB::bind_method(D_METHOD("set_strings", "_val"), &DragonBonesUserData::set_strings);
+	ClassDB::bind_method(D_METHOD("set_strings_readonly", "_val"), &DragonBonesUserData::set_strings);
 
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "ints", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_ints", "get_ints");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "floats", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_floats", "get_floats");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "strings", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_strings", "get_strings");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "ints", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_ints_readonly", "get_ints");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "floats", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_floats_readonly", "get_floats");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "strings", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_strings_readonly", "get_strings");
 }

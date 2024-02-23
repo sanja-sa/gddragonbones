@@ -146,6 +146,7 @@ public:
 #endif
 
 	DragonBonesArmature *get_armature();
+	void set_armature(DragonBonesArmature *) const; // readonly
 
 private:
 	void _on_resource_changed();
