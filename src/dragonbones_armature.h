@@ -1,11 +1,13 @@
 #pragma once
 
-#include "DragonBonesBone.h"
-#include "GDDisplay.h"
+#include "wrappers/GDDisplay.h"
+
 #include "dragonBones/armature/Armature.h"
 #include "dragonBones/armature/IArmatureProxy.h"
+#include "dragonbones_bone.h"
+#include "dragonbones_slot.h"
+
 #include "godot_cpp/classes/texture2d.hpp"
-#include "wrappers/DragonBonesSlot.h"
 
 namespace godot {
 

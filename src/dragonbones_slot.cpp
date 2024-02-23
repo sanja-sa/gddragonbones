@@ -1,10 +1,11 @@
-#include "DragonBonesSlot.h"
-#include "DragonBonesArmature.h"
-#include "GDDisplay.h"
-#include "GDMesh.h"
-#include "GDTextureAtlasData.h"
+#include "dragonbones_slot.h"
 
-#include "dragonBones/DragonBonesHeaders.h"
+#include "dragonbones_armature.h"
+
+#include "wrappers/GDDisplay.h"
+#include "wrappers/GDMesh.h"
+#include "wrappers/GDTextureAtlasData.h"
+
 #include "godot_cpp/classes/resource_loader.hpp"
 
 using namespace godot;

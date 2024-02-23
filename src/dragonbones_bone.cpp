@@ -1,5 +1,4 @@
-#include "DragonBonesBone.h"
-#include "dragonBones/DragonBonesHeaders.h"
+#include "dragonbones_bone.h"
 
 using namespace godot;
 

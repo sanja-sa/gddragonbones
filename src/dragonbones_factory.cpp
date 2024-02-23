@@ -2,13 +2,9 @@
 #include "dragonBones/core/DragonBones.h"
 #include "godot_cpp/classes/file_access.hpp"
 
-#include "wrappers/DragonBonesArmature.h"
+#include "dragonbones_armature.h"
 #include "wrappers/GDMesh.h"
 #include "wrappers/GDTextureAtlasData.h"
-
-#include <dragonBones/DragonBonesHeaders.h>
-
-#include "dragonbones.h"
 
 using namespace godot;
 using namespace dragonBones;

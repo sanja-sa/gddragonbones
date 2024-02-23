@@ -4,6 +4,8 @@
 #include "godot_cpp/classes/canvas_item_material.hpp"
 #include "godot_cpp/classes/node2d.hpp"
 
+#include "dragonBones/DragonBonesHeaders.h"
+
 namespace godot {
 
 class GDOwnerNode : public Node2D {

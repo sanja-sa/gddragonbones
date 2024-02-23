@@ -1,9 +1,10 @@
 #pragma once
 
 #include "dragonBones/core/DragonBones.h"
+#include "dragonbones_armature.h"
 #include "dragonbones_factory.h"
-#include "wrappers/DragonBonesArmature.h"
 #include "wrappers/GDDisplay.h"
+
 
 #define COMPATIBILITY_ENABLED
 

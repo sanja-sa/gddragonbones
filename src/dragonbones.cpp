@@ -4,7 +4,7 @@
 
 #include "godot_cpp/classes/engine.hpp"
 
-#include "wrappers/DragonBonesArmature.h"
+#include "dragonbones_armature.h"
 
 using namespace godot;
 

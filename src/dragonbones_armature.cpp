@@ -1,11 +1,9 @@
-#include "DragonBonesArmature.h"
+#include "dragonbones_armature.h"
 
-#include "GDDisplay.h"
-
-#include "dragonBones/DragonBonesHeaders.h"
-#include "dragonbones.h"
 #include "godot_cpp/classes/global_constants.hpp"
 #include "godot_cpp/classes/ref.hpp"
+
+#include "dragonbones.h"
 
 using namespace godot;
 using namespace dragonBones;

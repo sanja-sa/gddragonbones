@@ -1,7 +1,8 @@
 #pragma once
 
-#include "GDDisplay.h"
 #include "dragonBones/armature/Slot.h"
+#include "wrappers/GDDisplay.h"
+
 
 namespace godot {
 
