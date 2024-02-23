@@ -93,22 +93,24 @@ void DragonBones::dispatch_event(const String &_str_type, const dragonBones::Eve
 }
 
 void DragonBones::_on_resource_changed() {
+#ifdef TOOLS_ENABLED
+	auto armatures_settings = get_armature_settings();
+#endif // TOOLS_ENABLED
 	// 重设资源本身
 	auto to_set = m_res;
 	set_factory({});
 	set_factory(to_set);
+#ifdef TOOLS_ENABLED
+	if (p_armature) {
+		set_armature_settings(armatures_settings);
+	}
+#endif // TOOLS_ENABLED
 }
 
 void DragonBones::set_factory(const Ref<DragonBonesFactory> &_p_data) {
 	using namespace dragonBones;
 	if (m_res == _p_data)
 		return;
-
-	Ref<Texture2D> old_texture;
-	if (m_res.is_valid())
-		old_texture = m_res->get_default_texture();
-	else if (_p_data.is_valid())
-		old_texture = _p_data->get_default_texture();
 
 	if (p_armature) {
 		p_armature->stop_all_animations(false, true);
@@ -137,20 +139,17 @@ void DragonBones::set_factory(const Ref<DragonBonesFactory> &_p_data) {
 	}
 
 	// build Armature display
-	p_instance = m_res->create_dragon_bones(this, p_armature);
+	p_instance = m_res->create_dragon_bones(this, p_armature, instantiate_dragon_bones_data_name, instantiate_skin_name);
+	ERR_FAIL_NULL(p_armature);
 
 	// add children armature
 	p_armature->p_owner = this;
-
-	// To support non-texture atlas; I'd want to look around here
-	if (m_texture_atlas.is_null() || old_texture != m_res->get_default_texture())
-		m_texture_atlas = m_res->get_default_texture();
 
 	// update flip
 	set_flip_x(b_flip_x);
 	set_flip_y(b_flip_y);
 
-	p_armature->setup_recursively(b_debug, m_texture_atlas);
+	p_armature->setup_recursively(b_debug);
 	// add main armature
 	add_child(p_armature);
 
@@ -162,7 +161,7 @@ void DragonBones::set_factory(const Ref<DragonBonesFactory> &_p_data) {
 	// update material inheritance
 	p_armature->update_material_inheritance(b_inherit_child_material);
 
-	p_armature->getArmature()->advanceTime(0);
+	p_armature->advance(0);
 
 	notify_property_list_changed();
 	queue_redraw();
@@ -214,6 +213,38 @@ void DragonBones::set_speed_scale(float _f_speed) {
 
 float DragonBones::get_speed_scale() const {
 	return f_speed;
+}
+
+void DragonBones::set_instantiate_dragon_bones_data_name(String p_name) {
+	if (p_name == "[default]") {
+		p_name = "";
+	}
+	if (p_name == instantiate_dragon_bones_data_name) {
+		return;
+	}
+
+	instantiate_dragon_bones_data_name = p_name;
+	_on_resource_changed();
+}
+
+String DragonBones::get_instantiate_dragon_bones_data_name() const {
+	return instantiate_dragon_bones_data_name;
+}
+
+void DragonBones::set_instantiate_skin_name(String p_name) {
+	if (p_name == "[default]") {
+		p_name = "";
+	}
+	if (p_name == instantiate_skin_name) {
+		return;
+	}
+
+	instantiate_skin_name = p_name;
+	_on_resource_changed();
+}
+
+String DragonBones::get_instantiate_skin_name() const {
+	return instantiate_skin_name;
 }
 
 void DragonBones::set_callback_mode_process(DragonBonesArmature::AnimationCallbackModeProcess _mode) {
@@ -484,25 +515,12 @@ String DragonBones::get_current_animation_on_layer(int _layer) const {
 }
 #endif
 
-void DragonBones::set_texture(const Ref<Texture2D> &_p_texture) {
-	if (_p_texture.is_valid() && m_texture_atlas.is_valid() && (_p_texture == m_texture_atlas || m_texture_atlas->get_height() != _p_texture->get_height() || m_texture_atlas->get_width() != _p_texture->get_width()))
-		return;
-
-	m_texture_atlas = _p_texture;
-
-	if (p_armature) {
-		p_armature->update_texture_atlas(m_texture_atlas);
-		queue_redraw();
-	}
-}
-
-Ref<Texture2D> DragonBones::get_texture() const {
-	return m_texture_atlas;
-}
-
 void DragonBones::set_armature_settings(const Dictionary &p_settings) const {
-	ERR_FAIL_NULL(p_armature);
-	p_armature->set_settings(p_settings);
+	if (p_armature) {
+		p_armature->set_settings(p_settings);
+	} else {
+		WARN_PRINT_ED("p_armature is invalid, can't set armature settings.");
+	}
 }
 
 Dictionary DragonBones::get_armature_settings() const {
@@ -558,10 +576,34 @@ void DragonBones::_get_property_list(List<PropertyInfo> *_p_list) const {
 #endif // TOOLS_ENABLED
 }
 
-void DragonBones::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_texture", "texture"), &DragonBones::set_texture);
-	ClassDB::bind_method(D_METHOD("get_texture"), &DragonBones::get_texture);
+#ifdef TOOLS_ENABLED
+void DragonBones::_validate_property(PropertyInfo &p_property) const {
+	if (!Engine::get_singleton()->is_editor_hint() || m_res.is_null()) {
+		return;
+	}
+	if (p_property.name == SNAME("instantiate_dragon_bones_data_name")) {
+		String hint = "[default]";
 
+		for (const auto &name : m_res->get_loaded_dragon_bones_data_name_list()) {
+			hint += ",";
+			hint += name;
+		}
+
+		p_property.hint_string = hint;
+	} else if (p_property.name == SNAME("instantiate_skin_name")) {
+		String hint = "[default]";
+
+		for (const auto &name : m_res->get_loaded_dragon_bones_main_skin_name_list(instantiate_dragon_bones_data_name)) {
+			hint += ",";
+			hint += name;
+		}
+
+		p_property.hint_string = hint;
+	}
+}
+#endif // TOOLS_ENABLED
+
+void DragonBones::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_factory", "dragonbones"), &DragonBones::set_factory);
 	ClassDB::bind_method(D_METHOD("get_factory"), &DragonBones::get_factory);
 
@@ -636,11 +678,15 @@ void DragonBones::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "mode"), &DragonBones::set_callback_mode_process);
 	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &DragonBones::get_callback_mode_process);
 
+	ClassDB::bind_method(D_METHOD("set_instantiate_dragon_bones_data_name", "instantiate_dragon_bones_data_name"), &DragonBones::set_instantiate_dragon_bones_data_name);
+	ClassDB::bind_method(D_METHOD("get_instantiate_dragon_bones_data_name"), &DragonBones::get_instantiate_dragon_bones_data_name);
+
+	ClassDB::bind_method(D_METHOD("set_instantiate_skin_name", "instantiate_skin_name"), &DragonBones::set_instantiate_skin_name);
+	ClassDB::bind_method(D_METHOD("get_instantiate_skin_name"), &DragonBones::get_instantiate_skin_name);
+
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "factory", PROPERTY_HINT_RESOURCE_TYPE, DragonBonesFactory::get_class_static()), "set_factory", "get_factory");
 
 	// This is how we set top level properties
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture"), "set_texture", "get_texture");
-
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active", "is_active");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), "set_debug", "is_debug");
 
@@ -649,9 +695,13 @@ void DragonBones::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_y"), "set_flip_y", "is_fliped_y");
 
 	ADD_GROUP("Animation Settings", "animation_");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_loop", PROPERTY_HINT_RANGE, "-1,100,1"), "set_animation_loop", "get_animation_loop");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_loop", PROPERTY_HINT_RANGE, "0,100,1,or_greater"), "set_animation_loop", "get_animation_loop");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "animation_speed_scale", PROPERTY_HINT_RANGE, "-10,10,0.01"), "set_speed_scale", "get_speed_scale");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_callback_mode_process", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_callback_mode_process", "get_callback_mode_process");
+
+	ADD_GROUP("Instantiate Settings", "instantiate_");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "instantiate_dragon_bones_data_name", PROPERTY_HINT_ENUM_SUGGESTION, "[default]"), "set_instantiate_dragon_bones_data_name", "get_instantiate_dragon_bones_data_name");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "instantiate_skin_name", PROPERTY_HINT_ENUM_SUGGESTION, "[default]"), "set_instantiate_skin_name", "get_instantiate_skin_name");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "childs_use_this_material"), "set_inherit_material", "is_material_inherited");
 

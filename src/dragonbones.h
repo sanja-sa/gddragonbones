@@ -9,9 +9,11 @@
 
 namespace godot {
 
-/// TODO: 对所有的armature进行操作
+// Done: 对所有的armature进行操作
 // Done: 确保数据对象不被重复创建，并在需要的时候回收并重新创建（需要应用给其他实例）
 /// TODO: 修改dragonBones库的new delete
+/// TODO: 重命名
+/// TODO: 材质的依赖？
 class DragonBones : public GDOwnerNode, public dragonBones::IEventDispatcher {
 	GDCLASS(DragonBones, GDOwnerNode)
 
@@ -28,14 +30,15 @@ public:
 private:
 	dragonBones::DragonBones *p_instance{ nullptr };
 
-	Ref<Texture2D> m_texture_atlas;
 	Ref<DragonBonesFactory> m_res;
 	String str_curr_anim{ "[none]" };
 	DragonBonesArmature *p_armature{ nullptr };
 	DragonBonesArmature::AnimationCallbackModeProcess callback_mode_process{ DragonBonesArmature::ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
+	String instantiate_dragon_bones_data_name{ "" };
+	String instantiate_skin_name{ "" };
 	float f_speed{ 1.0f };
 	float f_progress{ 0.0f };
-	int c_loop{ -1 };
+	int c_loop{ 0 };
 	bool b_active{ true };
 	bool processing{ false };
 	bool b_playing{ false };
@@ -56,6 +59,10 @@ protected:
 	bool _set(const StringName &_str_name, const Variant &_c_r_value);
 	bool _get(const StringName &_str_name, Variant &_r_ret) const;
 	void _get_property_list(List<PropertyInfo> *_p_list) const;
+
+#ifdef TOOLS_ENABLED
+	void _validate_property(PropertyInfo &p_property) const;
+#endif // TOOLS_ENABLED
 
 public:
 	DragonBones() = default;
@@ -82,8 +89,11 @@ public:
 	void set_speed_scale(float _f_speed);
 	float get_speed_scale() const;
 
-	void set_texture(const Ref<Texture2D> &_p_texture);
-	Ref<Texture2D> get_texture() const;
+	void set_instantiate_dragon_bones_data_name(String p_name);
+	String get_instantiate_dragon_bones_data_name() const;
+
+	void set_instantiate_skin_name(String p_name);
+	String get_instantiate_skin_name() const;
 
 	void set_callback_mode_process(DragonBonesArmature::AnimationCallbackModeProcess _mode);
 	DragonBonesArmature::AnimationCallbackModeProcess get_callback_mode_process() const;
