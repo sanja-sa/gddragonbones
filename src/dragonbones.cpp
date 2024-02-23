@@ -11,10 +11,6 @@ using namespace godot;
 #define SNAME(sn) ([] {static const StringName ret{sn};return ret; }())
 
 /////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////
-//// Plugin module
-
 void DragonBones::_cleanup() {
 	b_inited = false;
 
@@ -594,6 +590,9 @@ void DragonBones::_validate_property(PropertyInfo &p_property) const {
 		String hint = "[default]";
 
 		for (const auto &name : m_res->get_loaded_dragon_bones_main_skin_name_list(instantiate_dragon_bones_data_name)) {
+			if (name == "default") {
+				continue;
+			}
 			hint += ",";
 			hint += name;
 		}
