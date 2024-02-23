@@ -16,6 +16,8 @@ env = SConscript("godot-cpp/SConstruct")
 env.Append(CPPPATH=["src/"])
 sources = Glob("src/*.cpp")
 
+if env.debug_features:
+    env.Append(CPPDEFINES=["TOOLS_ENABLED"])
 
 def add_sources_recursively(dir: str, glob_sources):
     for f in os.listdir(dir):

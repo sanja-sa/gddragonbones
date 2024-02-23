@@ -5,6 +5,7 @@
 #include "godot_cpp/classes/node2d.hpp"
 
 #include "dragonBones/DragonBonesHeaders.h"
+DRAGONBONES_HEADERS_H // 无用代码，仅用于消除 IDE 警告
 
 namespace godot {
 
