@@ -1,9 +1,9 @@
-#include "register_types.h"
+#include "dragon_bones_registration.h"
 
 #include "dragonbones.h"
-#include "editor/dragonbones_editor_plugin.h"
-
 #include "godot_cpp/classes/editor_plugin_registration.hpp"
+
+#include "editor/dragonbones_editor_plugin.h"
 
 #include "wrappers/GDMesh.h"
 
@@ -40,19 +40,7 @@ void uninitialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+
 	// 清除对象池
 	dragonBones::BaseObject::clearPool();
-}
-
-extern "C" {
-// Initialization.
-GDExtensionBool GDE_EXPORT example_library_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
-	godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
-
-	init_obj.register_initializer(initialize_dragonbones_module);
-	init_obj.register_terminator(uninitialize_dragonbones_module);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
-
-	return init_obj.init();
-}
 }
