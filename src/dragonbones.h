@@ -5,12 +5,10 @@
 #include "dragonbones_factory.h"
 #include "wrappers/GDDisplay.h"
 
-
 #define COMPATIBILITY_ENABLED
 
 namespace godot {
-/// TODO: 修改dragonBones库的new delete
-/// TODO: 重命名
+/// TODO: 修改dragonBones库的new delete,供给Godot追踪内存
 class DragonBones : public GDOwnerNode, public dragonBones::IEventDispatcher {
 	GDCLASS(DragonBones, GDOwnerNode)
 
@@ -148,6 +146,24 @@ public:
 
 	DragonBonesArmature *get_armature();
 	void set_armature(DragonBonesArmature *) const; // readonly
+
+	void for_each_armature_(const Callable &p_action);
+
+	template <class FUNC, std::enable_if_t<std::is_invocable_v<FUNC, DragonBonesArmature *, int>> *_dummy = nullptr>
+	void for_each_armature(FUNC &&p_action) {
+		if (!p_armature) {
+			return;
+		}
+
+		if constexpr (std::is_invocable_r_v<bool, FUNC, DragonBonesArmature *, int>) {
+			if (p_action(p_armature, 0)) {
+				return;
+			}
+		} else {
+			p_action(p_armature, 0);
+		}
+		p_armature->for_each_armature_recursively(p_action, 1);
+	}
 
 private:
 	void _on_resource_changed();

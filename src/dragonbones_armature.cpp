@@ -37,6 +37,9 @@ Ref<CanvasItemMaterial> DragonBonesArmature::get_material_to_set_blend_mode(bool
 }
 
 void DragonBonesArmature::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("for_each_armature", "action"), &DragonBonesArmature::for_each_armature_);
+	ClassDB::bind_method(D_METHOD("for_each_armature_recursively_", "action", "current_depth"), &DragonBonesArmature::for_each_armature_recursively_, DEFVAL(0));
+
 	ClassDB::bind_method(D_METHOD("has_animation", "animation_name"), &DragonBonesArmature::has_animation);
 	ClassDB::bind_method(D_METHOD("get_animations"), &DragonBonesArmature::get_animations);
 
@@ -159,24 +162,18 @@ void DragonBonesArmature::_bind_methods() {
 #endif // TOOLS_ENABLED
 }
 
-template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy>
-void DragonBonesArmature::for_each_armature(Func &&p_action) {
-	for (auto slot : getArmature()->getSlots()) {
-		if (slot->getDisplayList().size() == 0)
-			continue;
-		auto display = slot->getDisplayList()[slot->getDisplayIndex()];
-		if (display.second == dragonBones::DisplayType::Armature) {
-			dragonBones::Armature *armature = static_cast<dragonBones::Armature *>(display.first);
-			DragonBonesArmature *convertedDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
-			if constexpr (std::is_invocable_r_v<bool, Func, DragonBonesArmature *>) {
-				if (p_action(convertedDisplay)) {
-					break;
-				}
-			} else {
-				p_action(convertedDisplay);
-			}
-		}
-	}
+void DragonBonesArmature::for_each_armature_(const Callable &p_action) {
+	for_each_armature([&](auto p_child_armature) {
+		return p_action.call(p_child_armature).booleanize();
+	});
+}
+
+void DragonBonesArmature::for_each_armature_recursively_(const Callable &p_action, int p_current_depth) {
+	for_each_armature_recursively(
+			[&p_action](auto p_child_armature, auto depth) {
+				return p_action.call(p_child_armature, depth).booleanize();
+			},
+			p_current_depth);
 }
 
 void DragonBonesArmature::set_debug(bool _b_debug, bool p_recursively) {

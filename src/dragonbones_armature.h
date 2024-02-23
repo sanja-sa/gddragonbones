@@ -31,9 +31,6 @@ public:
 	};
 
 private:
-	template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy = nullptr>
-	void for_each_armature(Func &&p_action);
-
 	AnimationCallbackModeProcess callback_mode_process{ ANIMATION_CALLBACK_MODE_PROCESS_IDLE };
 	bool active{ true };
 	bool processing{ false };
@@ -99,9 +96,46 @@ public:
 	//
 	dragonBones::Slot *getSlot(const String &p_name) const { return p_armature->getSlot(p_name.ascii().get_data()); }
 
+	template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *>>::type *_dummy = nullptr>
+	void for_each_armature(Func &&p_action) {
+		for (auto slot : getArmature()->getSlots()) {
+			if (slot->getDisplayList().size() == 0)
+				continue;
+			auto display = slot->getDisplayList()[slot->getDisplayIndex()];
+			if (display.second == dragonBones::DisplayType::Armature) {
+				dragonBones::Armature *armature = static_cast<dragonBones::Armature *>(display.first);
+				DragonBonesArmature *convertedDisplay = static_cast<DragonBonesArmature *>(armature->getDisplay());
+				if constexpr (std::is_invocable_r_v<bool, Func, DragonBonesArmature *>) {
+					if (p_action(convertedDisplay)) {
+						break;
+					}
+				} else {
+					p_action(convertedDisplay);
+				}
+			}
+		}
+	}
+
+	template <typename Func, typename std::enable_if<std::is_invocable_v<Func, DragonBonesArmature *, int>>::type *_dummy = nullptr>
+	void for_each_armature_recursively(Func &&p_action, int p_current_depth = 0) {
+		for_each_armature([&p_action, p_current_depth](auto p_child_armature) {
+			if constexpr (std::is_invocable_r_v<bool, Func, DragonBonesArmature *, int>) {
+				if (p_action(p_child_armature, p_current_depth)) {
+					return;
+				}
+			} else {
+				p_action(p_child_armature, p_current_depth);
+			}
+			p_child_armature->for_each_armature_recursively(std::forward<Func>(p_action), p_current_depth + 1);
+		});
+	}
+
 public:
 	/* METHOD BINDINGS */
 	static void _bind_methods();
+
+	void for_each_armature_(const Callable &p_action);
+	void for_each_armature_recursively_(const Callable &p_action, int p_current_depth = 0);
 
 	bool has_animation(const String &_animation_name) const;
 	PackedStringArray get_animations();

@@ -606,7 +606,16 @@ void DragonBones::_validate_property(PropertyInfo &p_property) const {
 }
 #endif // TOOLS_ENABLED
 
+void DragonBones::for_each_armature_(const Callable &p_action) {
+	for_each_armature(
+			[&](auto p_armature, auto depth) {
+				return p_action.call(p_armature, depth).booleanize();
+			});
+}
+
 void DragonBones::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("for_each_armature", "action"), &DragonBones::for_each_armature_);
+
 	ClassDB::bind_method(D_METHOD("set_factory", "dragonbones"), &DragonBones::set_factory);
 	ClassDB::bind_method(D_METHOD("get_factory"), &DragonBones::get_factory);
 
