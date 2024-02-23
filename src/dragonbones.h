@@ -158,4 +158,38 @@ private:
 #endif // TOOLS_ENABLED
 };
 
+class DragonBonesUserData : public RefCounted {
+	GDCLASS(DragonBonesUserData, RefCounted)
+
+private:
+	dragonBones::UserData *user_data{ nullptr };
+
+protected:
+	static void _bind_methods();
+
+public:
+	DragonBonesUserData() = default;
+	DragonBonesUserData(dragonBones::UserData *p_user_data) :
+			user_data(p_user_data){};
+
+	bool has_data() const { return user_data; }
+
+	PackedInt32Array get_ints() const;
+	void set_ints(const PackedInt32Array &); // readonly
+
+	PackedFloat32Array get_floats() const;
+	void set_floats(const PackedFloat32Array &); // readonly
+
+	PackedStringArray get_strings() const;
+	void set_strings(const PackedStringArray &); // readonly
+
+	int get_int(size_t p_index = 0) const;
+	float get_float(size_t p_index = 0) const;
+	String get_string(size_t p_index = 0) const;
+
+	size_t get_ints_size() const;
+	size_t get_floats_size() const;
+	size_t get_strings_size() const;
+};
+
 } //namespace godot

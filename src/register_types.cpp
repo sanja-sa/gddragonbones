@@ -5,7 +5,6 @@
 
 #include "godot_cpp/classes/editor_plugin_registration.hpp"
 
-#include "resource_format_loader_dragonbones.h"
 #include "wrappers/GDMesh.h"
 
 using namespace godot;
@@ -15,24 +14,23 @@ void initialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
 		GDREGISTER_INTERNAL_CLASS(DragonBonesImportPlugin);
 		GDREGISTER_INTERNAL_CLASS(DragonBonesEditorPlugin);
 		EditorPlugins::add_by_type<DragonBonesEditorPlugin>();
+#ifdef TOOLS_ENABLED
+		GDREGISTER_INTERNAL_CLASS(DragonBonesArmatureProxy);
+#endif
 	}
 
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	GDREGISTER_INTERNAL_CLASS(GDMesh);
-
+	GDREGISTER_CLASS(DragonBonesFactory);
 	GDREGISTER_CLASS(DragonBones);
+
+	GDREGISTER_INTERNAL_CLASS(GDMesh);
 	GDREGISTER_ABSTRACT_CLASS(DragonBonesBone);
 	GDREGISTER_ABSTRACT_CLASS(DragonBonesSlot);
 	GDREGISTER_ABSTRACT_CLASS(DragonBonesArmature);
-
-	GDREGISTER_CLASS(DragonBonesResource);
-
-	if (!DragonBonesFactory::get_singleton()) {
-		memnew(DragonBonesFactory);
-	}
+	GDREGISTER_ABSTRACT_CLASS(DragonBonesUserData);
 }
 
 void uninitialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
@@ -42,10 +40,8 @@ void uninitialize_dragonbones_module(godot::ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	auto factory = DragonBonesFactory::get_singleton();
-	if (factory) {
-		memdelete(factory);
-	}
+	// 清除对象池
+	dragonBones::BaseObject::clearPool();
 }
 
 extern "C" {

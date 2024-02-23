@@ -31,16 +31,6 @@ void DragonBones::_cleanup() {
 	m_res.unref();
 }
 
-void DragonBones::dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
-	using namespace dragonBones;
-	if (Engine::get_singleton()->is_editor_hint()) {
-		return;
-	}
-
-	if (_str_type == EventObject::SOUND_EVENT)
-		emit_signal("dragon_anim_snd_event", String(_p_value->animationState->name.c_str()), String(_p_value->name.c_str()));
-}
-
 Ref<CanvasItemMaterial> DragonBones::get_material_to_set_blend_mode(bool p_required) {
 	Ref<CanvasItemMaterial> ret = get_material();
 
@@ -52,51 +42,50 @@ Ref<CanvasItemMaterial> DragonBones::get_material_to_set_blend_mode(bool p_requi
 	return ret;
 }
 
+void DragonBones::dispatch_sound_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
+	using namespace dragonBones;
+	if (Engine::get_singleton()->is_editor_hint()) {
+		return;
+	}
+
+	if (_str_type == EventObject::SOUND_EVENT) {
+		DragonBonesArmature *armature_proxy = static_cast<DragonBonesArmature *>(_p_value->getArmature()->getDisplay());
+		String anim_name = _p_value->animationState->name.c_str();
+		String event_name = _p_value->name.c_str();
+		Ref<DragonBonesUserData> user_data{ memnew(DragonBonesUserData(_p_value->getData())) };
+		emit_signal("sound_event", armature_proxy, anim_name, event_name, user_data);
+	}
+}
+
 void DragonBones::dispatch_event(const String &_str_type, const dragonBones::EventObject *_p_value) {
 	using namespace dragonBones;
 	if (Engine::get_singleton()->is_editor_hint()) {
 		return;
 	}
+
+	DragonBonesArmature *armature_proxy = static_cast<DragonBonesArmature *>(_p_value->getArmature()->getDisplay());
+	String anim_name = _p_value->animationState->name.c_str();
+
 	if (_str_type == EventObject::START)
-		emit_signal("dragon_anim_start", String(_p_value->animationState->name.c_str()));
+		emit_signal("start", armature_proxy, anim_name);
 	else if (_str_type == EventObject::LOOP_COMPLETE)
-		emit_signal("dragon_anim_loop_complete", String(_p_value->animationState->name.c_str()));
+		emit_signal("loop_completed", armature_proxy, anim_name);
 	else if (_str_type == EventObject::COMPLETE)
-		emit_signal("dragon_anim_complete", String(_p_value->animationState->name.c_str()));
-	else if (_str_type == EventObject::FRAME_EVENT) {
-		int int_val = 0;
-		int float_val = 0;
-		const char *string_val = "";
-		UserData *data = _p_value->getData();
-		Armature *armature = _p_value->getArmature();
-
-		if (data != NULL) {
-			int_val = _p_value->getData()->getInt(0);
-			float_val = _p_value->getData()->getFloat(0);
-
-			if (!data->getStrings().empty()) {
-				string_val = _p_value->getData()->getString(0).c_str();
-			}
-		}
-
-		Dictionary dict = Dictionary();
-
-		dict[SNAME("armature")] = String(armature->getName().c_str());
-		dict[SNAME("animation")] = String(_p_value->animationState->name.c_str());
-		dict[SNAME("event_name")] = String(_p_value->name.c_str());
-		dict[SNAME("int")] = int_val;
-		dict[SNAME("float")] = float_val;
-		dict[SNAME("string")] = string_val;
-
-		emit_signal("dragon_anim_event", dict);
-	} else if (_str_type == EventObject::FADE_IN)
-		emit_signal("dragon_fade_in", String(_p_value->animationState->name.c_str()));
+		emit_signal("completed", armature_proxy, anim_name);
+	else if (_str_type == EventObject::FADE_IN)
+		emit_signal("fade_in_start", armature_proxy, anim_name);
 	else if (_str_type == EventObject::FADE_IN_COMPLETE)
-		emit_signal("dragon_fade_in_complete", String(_p_value->animationState->name.c_str()));
+		emit_signal("fade_in_completed", armature_proxy, anim_name);
 	else if (_str_type == EventObject::FADE_OUT)
-		emit_signal("dragon_fade_out", String(_p_value->animationState->name.c_str()));
+		emit_signal("fade_out_start", armature_proxy, anim_name);
 	else if (_str_type == EventObject::FADE_OUT_COMPLETE)
-		emit_signal("dragon_fade_out_complete", String(_p_value->animationState->name.c_str()));
+		emit_signal("fade_out_completed", armature_proxy, anim_name);
+	else if (_str_type == EventObject::FRAME_EVENT) {
+		String event_name = _p_value->name.c_str();
+		Ref<DragonBonesUserData> user_data{ memnew(DragonBonesUserData(_p_value->getData())) };
+		// TODO:: 是否需要包装 EventObje 与 ActionData？
+		emit_signal("frame_event", armature_proxy, anim_name, event_name, user_data);
+	}
 }
 
 void DragonBones::_on_resource_changed() {
@@ -715,13 +704,144 @@ void DragonBones::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "armaturess_use_this_material"), "set_inherit_material", "is_material_inherited");
 
-	ADD_SIGNAL(MethodInfo("dragon_anim_start", PropertyInfo(Variant::STRING, "anim")));
-	ADD_SIGNAL(MethodInfo("dragon_anim_complete", PropertyInfo(Variant::STRING, "anim")));
-	ADD_SIGNAL(MethodInfo("dragon_anim_event", PropertyInfo(Variant::DICTIONARY, "event")));
-	ADD_SIGNAL(MethodInfo("dragon_anim_loop_complete", PropertyInfo(Variant::STRING, "anim")));
-	ADD_SIGNAL(MethodInfo("dragon_anim_snd_event", PropertyInfo(Variant::STRING, "anim"), PropertyInfo(Variant::STRING, "ev")));
-	ADD_SIGNAL(MethodInfo("dragon_fade_in", PropertyInfo(Variant::STRING, "anim")));
-	ADD_SIGNAL(MethodInfo("dragon_fade_in_complete", PropertyInfo(Variant::STRING, "anim")));
-	ADD_SIGNAL(MethodInfo("dragon_fade_out", PropertyInfo(Variant::STRING, "anim")));
-	ADD_SIGNAL(MethodInfo("dragon_fade_out_complete", PropertyInfo(Variant::STRING, "anim")));
+	// 信号
+	const auto armature_prop = PropertyInfo(Variant::OBJECT, "armature", PROPERTY_HINT_NONE, "", PROPERTY_HINT_NONE, DragonBonesArmature::get_class_static());
+	const auto anim_name_prop = PropertyInfo(Variant::STRING, "anim_name");
+
+	ADD_SIGNAL(MethodInfo("start", armature_prop, anim_name_prop));
+	ADD_SIGNAL(MethodInfo("completed", armature_prop, anim_name_prop));
+	ADD_SIGNAL(MethodInfo("loop_completed", armature_prop, anim_name_prop));
+	ADD_SIGNAL(MethodInfo("fade_in_start", armature_prop, anim_name_prop));
+	ADD_SIGNAL(MethodInfo("fade_in_completed", armature_prop, anim_name_prop));
+	ADD_SIGNAL(MethodInfo("fade_out_start", armature_prop, anim_name_prop));
+	ADD_SIGNAL(MethodInfo("fade_out_completed", armature_prop, anim_name_prop));
+
+	const auto event_name_prop = PropertyInfo(Variant::STRING, "event_name");
+	const auto user_data_prop = PropertyInfo(Variant::OBJECT, "event_data", PROPERTY_HINT_NONE, "", PROPERTY_HINT_NONE, DragonBonesUserData::get_class_static());
+	ADD_SIGNAL(MethodInfo("frame_event", armature_prop, anim_name_prop, event_name_prop, user_data_prop));
+	ADD_SIGNAL(MethodInfo("sound_event", armature_prop, anim_name_prop, event_name_prop, user_data_prop));
+}
+
+////////////////
+PackedInt32Array DragonBonesUserData::get_ints() const {
+	PackedInt32Array ret;
+	if (!user_data) {
+		return ret;
+	}
+
+	if (user_data->ints.size()) {
+		ret.resize(user_data->ints.size());
+		memcpy(ret.ptrw(), user_data->ints.data(), user_data->ints.size() * sizeof(int));
+	}
+
+	return ret;
+}
+
+void DragonBonesUserData::set_ints(const PackedInt32Array &) {
+	ERR_FAIL_MSG("\"ints\" is readonly.");
+}
+
+PackedFloat32Array DragonBonesUserData::get_floats() const {
+	PackedFloat32Array ret;
+	if (!user_data) {
+		return ret;
+	}
+
+	if (user_data->floats.size()) {
+		ret.resize(user_data->floats.size());
+		memcpy(ret.ptrw(), user_data->floats.data(), user_data->floats.size() * sizeof(int));
+	}
+
+	return ret;
+}
+
+void DragonBonesUserData::set_floats(const PackedFloat32Array &) {
+	ERR_FAIL_MSG("\"floats\" is readonly.");
+}
+
+PackedStringArray DragonBonesUserData::get_strings() const {
+	PackedStringArray ret;
+	if (!user_data) {
+		return ret;
+	}
+
+	if (user_data->strings.size()) {
+		for (size_t i = 0; i < user_data->strings.size(); ++i) {
+			ret[i] = user_data->strings[i].c_str();
+		}
+	}
+
+	return ret;
+}
+
+void DragonBonesUserData::set_strings(const PackedStringArray &) {
+	ERR_FAIL_MSG("\"strings\" is readonly.");
+}
+
+int DragonBonesUserData::get_int(size_t p_index) const {
+	if (!user_data) {
+		return {};
+	}
+	ERR_FAIL_INDEX_V(p_index, user_data->ints.size(), {});
+	return user_data->ints[p_index];
+}
+
+float DragonBonesUserData::get_float(size_t p_index) const {
+	if (!user_data) {
+		return {};
+	}
+	ERR_FAIL_INDEX_V(p_index, user_data->floats.size(), {});
+	return user_data->floats[p_index];
+}
+
+String DragonBonesUserData::get_string(size_t p_index) const {
+	if (!user_data) {
+		return {};
+	}
+	ERR_FAIL_INDEX_V(p_index, user_data->strings.size(), {});
+	return user_data->strings[p_index].c_str();
+}
+
+size_t DragonBonesUserData::get_ints_size() const {
+	if (!user_data) {
+		return {};
+	}
+	return user_data->ints.size();
+}
+size_t DragonBonesUserData::get_floats_size() const {
+	if (!user_data) {
+		return {};
+	}
+	return user_data->floats.size();
+}
+size_t DragonBonesUserData::get_strings_size() const {
+	if (!user_data) {
+		return {};
+	}
+	return user_data->strings.size();
+}
+
+void DragonBonesUserData::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("has_data"), &DragonBonesUserData::has_data);
+
+	ClassDB::bind_method(D_METHOD("get_ints_size"), &DragonBonesUserData::get_ints_size);
+	ClassDB::bind_method(D_METHOD("get_floats_size"), &DragonBonesUserData::get_floats_size);
+	ClassDB::bind_method(D_METHOD("get_strings_size"), &DragonBonesUserData::get_strings_size);
+
+	ClassDB::bind_method(D_METHOD("get_int", "index"), &DragonBonesUserData::get_int, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("get_float", "index"), &DragonBonesUserData::get_float, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("get_string", "index"), &DragonBonesUserData::get_string, DEFVAL(0));
+
+	ClassDB::bind_method(D_METHOD("get_ints"), &DragonBonesUserData::get_ints);
+	ClassDB::bind_method(D_METHOD("set_ints", "_val"), &DragonBonesUserData::set_ints);
+
+	ClassDB::bind_method(D_METHOD("get_floats"), &DragonBonesUserData::get_floats);
+	ClassDB::bind_method(D_METHOD("set_floats", "_val"), &DragonBonesUserData::set_floats);
+
+	ClassDB::bind_method(D_METHOD("get_strings"), &DragonBonesUserData::get_strings);
+	ClassDB::bind_method(D_METHOD("set_strings", "_val"), &DragonBonesUserData::set_strings);
+
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_INT32_ARRAY, "ints", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_ints", "get_ints");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "floats", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_floats", "get_floats");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_STRING_ARRAY, "strings", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_READ_ONLY), "set_strings", "get_strings");
 }
