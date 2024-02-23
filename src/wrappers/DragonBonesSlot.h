@@ -12,6 +12,11 @@ private:
 	float _textureScale;
 	GDDisplay *_renderDisplay;
 
+	Ref<Texture2D> get_display_texture() const;
+
+public:
+	void update_display_texutre() const;
+
 public:
 	virtual void _updateVisible() override;
 	virtual void _updateBlendMode() override;

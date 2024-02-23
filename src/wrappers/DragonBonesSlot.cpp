@@ -5,9 +5,25 @@
 #include "GDTextureAtlasData.h"
 
 #include "dragonBones/DragonBonesHeaders.h"
+#include "godot_cpp/classes/resource_loader.hpp"
 
 using namespace godot;
 using namespace dragonBones;
+
+Ref<Texture2D> Slot_GD::get_display_texture() const {
+	if (!_textureData) {
+		return {};
+	}
+	auto atlas = static_cast<GDTextureAtlasData *>(_textureData->parent);
+	ERR_FAIL_NULL_V(atlas, {});
+	return ResourceLoader::get_singleton()->load(atlas->get_image_file_path());
+}
+
+void Slot_GD::update_display_texutre() const {
+	if (_renderDisplay) {
+		_renderDisplay->texture = get_display_texture();
+	}
+}
 
 void Slot_GD::_updateZOrder() {
 	_renderDisplay->set_z_index(_zOrder);
@@ -76,6 +92,7 @@ void Slot_GD::_updateColor() {
 }
 
 void Slot_GD::_initDisplay(void *value, bool isRetain) {
+	update_display_texutre();
 }
 
 void Slot_GD::_disposeDisplay(void *value, bool isRelease) {
@@ -83,9 +100,11 @@ void Slot_GD::_disposeDisplay(void *value, bool isRelease) {
 
 void Slot_GD::_onUpdateDisplay() {
 	_renderDisplay = static_cast<GDDisplay *>(_display != nullptr ? _display : _rawDisplay);
+	update_display_texutre();
 }
 
 void Slot_GD::_addDisplay() {
+	update_display_texutre();
 }
 
 void Slot_GD::_replaceDisplay(void *value, bool isArmatureDisplay) {
