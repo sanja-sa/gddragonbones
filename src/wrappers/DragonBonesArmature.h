@@ -4,6 +4,7 @@
 #include "GDDisplay.h"
 #include "dragonBones/armature/Armature.h"
 #include "dragonBones/armature/IArmatureProxy.h"
+#include "godot_cpp/classes/texture2d.hpp"
 #include "wrappers/DragonBonesSlot.h"
 
 namespace godot {
@@ -85,7 +86,7 @@ public:
 	virtual dragonBones::Armature *getArmature() const override { return p_armature; }
 	virtual dragonBones::Animation *getAnimation() const override { return p_armature->getAnimation(); }
 
-	void setup_recursively(bool _b_debug, const Ref<Texture> &_m_texture_atlas);
+	void setup_recursively(bool _b_debug);
 	void update_childs(bool _b_color, bool _b_blending = false);
 	void update_texture_atlas(const Ref<Texture> &_m_texture_atlas);
 	void update_material_inheritance(bool _b_inherit_material);
@@ -167,6 +168,9 @@ public:
 	void set_flip_y_(bool p_flip_y) { set_flip_y(p_flip_y); }
 	void set_flip_y(bool p_flip_y, bool p_recursively = false);
 	bool is_flipped_y() const;
+
+	Ref<Texture2D> get_texture_override() const;
+	void set_texture_override(const Ref<Texture2D> &p_texture_override);
 
 public:
 	void set_settings(const Dictionary &p_setting);

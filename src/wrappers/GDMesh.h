@@ -47,7 +47,10 @@ public:
 		if (indices.is_empty())
 			return;
 
-		if (texture.is_valid()) {
+		auto owner = static_cast<GDDisplay *>(p_owner);
+		const Ref<Texture2D> texture_to_draw = owner && owner->texture.is_valid() ? owner->texture : this->texture;
+
+		if (texture_to_draw.is_valid()) {
 			RenderingServer::get_singleton()->canvas_item_add_triangle_array(
 					get_canvas_item(),
 					indices,
@@ -56,11 +59,11 @@ public:
 					verticesUV,
 					{},
 					{},
-					texture.is_valid() ? texture->get_rid() : RID(),
+					texture_to_draw.is_valid() ? texture_to_draw->get_rid() : RID(),
 					-1);
 		}
 
-		if (b_debug || !texture.is_valid()) {
+		if (b_debug || texture_to_draw.is_null()) {
 			for (int idx = 0; idx < indices.size(); idx += 3) {
 				RenderingServer::get_singleton()->canvas_item_add_line(get_canvas_item(), verticesPos[indices[idx]], verticesPos[indices[idx + 1]], col_debug, 1.0);
 				RenderingServer::get_singleton()->canvas_item_add_line(get_canvas_item(), verticesPos[indices[idx + 1]], verticesPos[indices[idx + 2]], col_debug, 1.0);

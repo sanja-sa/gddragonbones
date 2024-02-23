@@ -90,6 +90,9 @@ void DragonBonesArmature::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_flip_y_", "flip_y"), &DragonBonesArmature::set_flip_y_);
 	ClassDB::bind_method(D_METHOD("is_flipped_y"), &DragonBonesArmature::is_flipped_y);
 
+	ClassDB::bind_method(D_METHOD("set_texture_override", "texture_override"), &DragonBonesArmature::set_texture_override);
+	ClassDB::bind_method(D_METHOD("get_texture_override"), &DragonBonesArmature::get_texture_override);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "debug"), "set_debug_", "is_debug");
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "current_animation", PROPERTY_HINT_ENUM, "", PROPERTY_USAGE_EDITOR), "set_current_animation", "get_current_animation");
@@ -102,6 +105,8 @@ void DragonBonesArmature::_bind_methods() {
 
 	ADD_GROUP("Callback Mode", "callback_mode_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "callback_mode_process", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_callback_mode_process_", "get_callback_mode_process");
+
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "texture_override", PROPERTY_HINT_RESOURCE_TYPE, Texture2D::get_class_static()), "set_texture_override", "get_texture_override");
 
 	// Enum
 	BIND_CONSTANT(ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS);
@@ -528,6 +533,14 @@ bool DragonBonesArmature::is_flipped_y() const {
 	return getArmature()->getFlipY();
 }
 
+Ref<Texture2D> DragonBonesArmature::get_texture_override() const {
+	return texture;
+}
+
+void DragonBonesArmature::set_texture_override(const Ref<Texture2D> &p_texture_override) {
+	texture = p_texture_override;
+}
+
 Dictionary DragonBonesArmature::get_ik_constraints() {
 	Dictionary dict;
 
@@ -608,7 +621,7 @@ void DragonBonesArmature::dispose(bool _disposeProxy) {
 	}
 }
 
-void DragonBonesArmature::setup_recursively(bool _b_debug, const Ref<Texture> &_m_texture_atlas) {
+void DragonBonesArmature::setup_recursively(bool _b_debug) {
 	if (!p_armature)
 		return;
 
@@ -617,16 +630,15 @@ void DragonBonesArmature::setup_recursively(bool _b_debug, const Ref<Texture> &_
 		if (!slot)
 			continue;
 
-		for_each_armature([&_m_texture_atlas, this](DragonBonesArmature *p_child_armature) {
+		for_each_armature([this](DragonBonesArmature *p_child_armature) {
 			p_child_armature->p_owner = p_owner;
-			p_child_armature->setup_recursively(b_debug, _m_texture_atlas);
+			p_child_armature->setup_recursively(b_debug);
 		});
 
 		if (auto display = static_cast<GDDisplay *>(slot->getRawDisplay())) {
 			add_child(display);
 			display->p_owner = this;
 			display->b_debug = _b_debug;
-			display->texture = _m_texture_atlas;
 		}
 	}
 }
