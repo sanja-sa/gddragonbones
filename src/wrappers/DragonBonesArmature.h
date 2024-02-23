@@ -9,7 +9,6 @@
 
 namespace godot {
 
-// TODO: 独立材质控制
 // 同一个DragonBones中的Armature公用同一个时钟，不做特殊处理不能单独设置Armature的动画Speed
 class DragonBonesArmature : public GDDisplay, public dragonBones::IArmatureProxy {
 	GDCLASS(DragonBonesArmature, GDDisplay)

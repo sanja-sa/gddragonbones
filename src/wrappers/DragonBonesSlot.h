@@ -41,6 +41,7 @@ protected:
 	void __get_uv_pt(Point2 &_pt, bool _is_rot, float _u, float _v, const dragonBones::Rectangle &_reg, const dragonBones::TextureAtlasData *_p_atlas);
 };
 
+// TODO: 是否需要对每个Slot单独设置继承父级材质？
 class DragonBonesSlot : public RefCounted {
 	GDCLASS(DragonBonesSlot, RefCounted);
 

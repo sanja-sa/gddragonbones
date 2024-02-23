@@ -39,7 +39,6 @@ Ref<CanvasItemMaterial> DragonBonesArmature::get_material_to_set_blend_mode(bool
 }
 
 void DragonBonesArmature::_bind_methods() {
-	// TODO:: 属性
 	ClassDB::bind_method(D_METHOD("has_animation", "animation_name"), &DragonBonesArmature::has_animation);
 	ClassDB::bind_method(D_METHOD("get_animations"), &DragonBonesArmature::get_animations);
 
@@ -240,10 +239,8 @@ void DragonBonesArmature::set_current_animation(const String &p_animation) {
 	if (p_animation == "[none]" || p_animation.is_empty()) {
 		stop(get_current_animation());
 	} else if (!is_playing()) {
-		// TODO: 循环
 		play(p_animation, static_cast<DragonBones *>(p_owner)->get_animation_loop());
 	} else if (get_current_animation() != p_animation) {
-		// TODO: 循环
 		play(p_animation, static_cast<DragonBones *>(p_owner)->get_animation_loop());
 	} else {
 		// 相同动画，无需响应

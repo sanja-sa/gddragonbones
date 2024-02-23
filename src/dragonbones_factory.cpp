@@ -2,7 +2,6 @@
 #include "dragonBones/core/DragonBones.h"
 #include "godot_cpp/classes/file_access.hpp"
 
-#include "godot_cpp/classes/resource_loader.hpp"
 #include "wrappers/DragonBonesArmature.h"
 #include "wrappers/GDMesh.h"
 #include "wrappers/GDTextureAtlasData.h"
@@ -14,7 +13,6 @@
 using namespace godot;
 using namespace dragonBones;
 
-// TODO: 在编辑器中追踪文件变动
 //////////////////////////////////////////////////////////////////
 
 ///  工厂实现  ///////////////////////////////////////////////////////////////
